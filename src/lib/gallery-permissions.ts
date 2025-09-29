@@ -1,4 +1,13 @@
-import type { Gallery } from "@prisma/client";
+type GalleryVisibility = "PUBLIC" | "PRIVATE";
+
+type GalleryLike = {
+  ownerId: string;
+  visibility: GalleryVisibility;
+};
+
+type GalleryOwnerOnly = {
+  ownerId: string;
+};
 
 export type SessionLike = {
   user?: {
@@ -6,13 +15,13 @@ export type SessionLike = {
   } | null;
 } | null;
 
-export function canViewGallery(gallery: Pick<Gallery, "ownerId" | "visibility">, session: SessionLike) {
+export function canViewGallery(gallery: GalleryLike, session: SessionLike) {
   if (gallery.visibility === "PUBLIC") return true;
   const sessionUserId = session?.user?.id;
   return !!sessionUserId && sessionUserId === gallery.ownerId;
 }
 
-export function isGalleryOwner(gallery: Pick<Gallery, "ownerId">, session: SessionLike) {
+export function isGalleryOwner(gallery: GalleryOwnerOnly, session: SessionLike) {
   const sessionUserId = session?.user?.id;
   return !!sessionUserId && sessionUserId === gallery.ownerId;
 }

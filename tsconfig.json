@@ -26,12 +26,18 @@
       "next",
       "next/types/global",
       "next/image-types/global"
+    ],
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
     ]
   },
   "include": [
+    "**/*.tsx",
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

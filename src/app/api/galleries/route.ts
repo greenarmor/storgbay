@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const gallery = await prisma.gallery.create({
     data: {
       title, description, visibility,
-      ownerId: (session as any).user.id,
+      ownerId: session.user.id,
       items: { create: fileIds.map((id: string, i: number) => ({ fileId: id, position: i })) },
     },
     include: { items: true },

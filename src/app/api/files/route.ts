@@ -5,6 +5,8 @@ import { publicUrl } from "@/lib/s3";
 export async function GET() {
   const session = await auth();
   if (!session) return Response.json([], { status: 200 });
-  const files = await prisma.file.findMany({ where: { ownerId: (session as any).user.id }, orderBy: { createdAt: "desc" } });
-  return Response.json(files.map(f => ({ ...f, url: publicUrl(f.key) })));
+  const files = await prisma.file.findMany({ where: { ownerId: session.user.id }, orderBy: { createdAt: "desc" } });
+  type FileRecord = (typeof files)[number];
+  const filesWithUrls = files.map((file: FileRecord) => ({ ...file, url: publicUrl(file.key) }));
+  return Response.json(filesWithUrls);
 }

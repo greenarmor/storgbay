@@ -4,9 +4,16 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
 import { compare } from "bcryptjs";
 
-export type AppSession = DefaultSession & { user: { id: string; role: "USER" | "ADMIN" } };
+export type AppSessionUser = DefaultSession["user"] & {
+  id: string;
+  role: "USER" | "ADMIN";
+};
 
-export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
+export type AppSession = DefaultSession & {
+  user: AppSessionUser;
+};
+
+const authConfig = NextAuth({
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "database" },
   providers: [
@@ -25,8 +32,23 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async session({ session, user }) {
-      if (user) (session as any).user.role = (user as any).role;
-      return session;
+      if (session.user && user) {
+        session.user = {
+          ...session.user,
+          id: user.id,
+          role: (user as any).role,
+        } as AppSessionUser;
+      }
+      return session as AppSession;
     },
   },
 });
+
+export const {
+  handlers: { GET, POST },
+  auth: baseAuth,
+  signIn,
+  signOut,
+} = authConfig;
+
+export const auth = baseAuth as () => Promise<AppSession | null>;
