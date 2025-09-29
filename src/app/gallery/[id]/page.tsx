@@ -1,6 +1,9 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { canViewGallery } from "@/lib/gallery-permissions";
 import { publicUrl, presignGet } from "@/lib/s3";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 
 function isImage(m: string){ return m?.startsWith("image/"); }
 function isVideo(m: string){ return m?.startsWith("video/"); }
@@ -8,8 +11,10 @@ function isAudio(m: string){ return m?.startsWith("audio/"); }
 function isPdf(m: string){ return m === "application/pdf"; }
 
 export default async function GalleryPage({ params }: { params: { id: string } }){
+  const session = await auth();
   const g = await prisma.gallery.findUnique({ where: { id: params.id }, include: { items: { include: { file: true } } } });
-  if(!g) return <div>Not found</div>;
+  if(!g) notFound();
+  if(!canViewGallery(g, session)) notFound();
 
   const filesWithUrl = await Promise.all(g.items.map(async it => {
     const f = it.file;
