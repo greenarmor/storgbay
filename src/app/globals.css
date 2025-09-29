@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji"; margin: 0; }
+nav a { text-decoration: none; color: #111; }
+nav a:hover { text-decoration: underline; }
+button { cursor: pointer; }
+input, select, button { padding: 8px; margin-right: 8px; }

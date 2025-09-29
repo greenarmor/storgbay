@@ -1,0 +1,35 @@
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const CreateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  visibility: z.enum(["PUBLIC","PRIVATE"]).default("PUBLIC"),
+  fileIds: z.array(z.string()).default([])
+});
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session) return new Response("Unauthorized", { status: 401 });
+  const body = await req.json();
+  const { title, description, visibility, fileIds } = CreateSchema.parse(body);
+  const gallery = await prisma.gallery.create({
+    data: {
+      title, description, visibility,
+      ownerId: (session as any).user.id,
+      items: { create: fileIds.map((id: string, i: number) => ({ fileId: id, position: i })) },
+    },
+    include: { items: true },
+  });
+  return Response.json(gallery);
+}
+
+export async function GET() {
+  const galleries = await prisma.gallery.findMany({
+    where: { visibility: "PUBLIC" },
+    orderBy: { createdAt: "desc" },
+    include: { items: { include: { file: true } } },
+  });
+  return Response.json(galleries);
+}

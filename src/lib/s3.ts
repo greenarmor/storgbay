@@ -1,0 +1,33 @@
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+const endpoint = process.env.S3_ENDPOINT!; // e.g., http://localhost:9000
+export const s3 = new S3Client({
+  region: process.env.S3_REGION || "us-east-1",
+  endpoint,
+  forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY!,
+    secretAccessKey: process.env.S3_SECRET_KEY!,
+  },
+});
+
+export async function presignPut(key: string, contentType: string) {
+  const bucket = process.env.S3_BUCKET!;
+  const cmd = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType });
+  const url = await getSignedUrl(s3, cmd, { expiresIn: 60 * 5 });
+  return { url, bucket, key };
+}
+
+export async function presignGet(key: string) {
+  const bucket = process.env.S3_BUCKET!;
+  const cmd = new GetObjectCommand({ Bucket: bucket, Key: key });
+  const url = await getSignedUrl(s3, cmd, { expiresIn: 60 * 5 });
+  return url;
+}
+
+export function publicUrl(key: string) {
+  const bucket = process.env.S3_BUCKET!;
+  // Works for public assets if you've enabled anonymous read on the bucket
+  return `${endpoint}/${bucket}/${encodeURIComponent(key)}`;
+}
