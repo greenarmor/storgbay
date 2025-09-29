@@ -1,4 +1,5 @@
-import NextAuth, { DefaultSession } from "next-auth";
+import NextAuth, { DefaultSession, getServerSession } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
@@ -13,7 +14,7 @@ export type AppSession = DefaultSession & {
   user: AppSessionUser;
 };
 
-const authConfig = NextAuth({
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: "database" },
   providers: [
@@ -42,13 +43,12 @@ const authConfig = NextAuth({
       return session as AppSession;
     },
   },
-});
+};
 
-export const {
-  handlers: { GET, POST },
-  auth: baseAuth,
-  signIn,
-  signOut,
-} = authConfig;
+const handler = NextAuth(authOptions);
 
-export const auth = baseAuth as () => Promise<AppSession | null>;
+export { handler as GET, handler as POST };
+
+export const auth = async () =>
+  (await getServerSession(authOptions)) as AppSession | null;
+
