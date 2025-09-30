@@ -16,7 +16,7 @@ export type AppSession = DefaultSession & {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   providers: [
     Credentials({
       name: "Credentials",
@@ -32,12 +32,19 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user && user) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = (user as any).id;
+        token.role = (user as any).role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
         session.user = {
           ...session.user,
-          id: user.id,
-          role: (user as any).role,
+          id: token.id as string,
+          role: token.role as AppSessionUser["role"],
         } as AppSessionUser;
       }
       return session as AppSession;
