@@ -2,6 +2,16 @@ export function isImage(mime?: string | null): boolean {
   return !!mime && mime.startsWith("image/");
 }
 
+export function isAnimatedImage(mime?: string | null, filename?: string | null): boolean {
+  const normalizedMime = mime?.toLowerCase() ?? null;
+  if (normalizedMime === "image/gif") {
+    return true;
+  }
+
+  const normalizedFilename = filename?.toLowerCase() ?? null;
+  return normalizedFilename !== null && normalizedFilename.endsWith(".gif");
+}
+
 export function isVideo(mime?: string | null): boolean {
   return !!mime && mime.startsWith("video/");
 }

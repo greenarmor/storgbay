@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatBytes, formatDate, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
+import { formatBytes, formatDate, isAnimatedImage, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
 
 type LibraryFile = {
   id: string;
@@ -316,7 +316,14 @@ export function FileManager() {
                 />
                 <div style={{ width: "100%", borderRadius: 8, overflow: "hidden" }}>
                   {isImage(file.mime) ? (
-                    <Image src={file.url} alt={file.filename} width={640} height={480} style={{ width: "100%", height: "auto" }} />
+                    <Image
+                      src={file.url}
+                      alt={file.filename}
+                      width={640}
+                      height={480}
+                      style={{ width: "100%", height: "auto" }}
+                      unoptimized={isAnimatedImage(file.mime, file.filename)}
+                    />
                   ) : isVideo(file.mime) ? (
                     <video src={file.url} controls style={{ width: "100%", borderRadius: 8 }} />
                   ) : isAudio(file.mime) ? (

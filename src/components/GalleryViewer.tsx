@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { formatBytes, formatDate, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
+import { formatBytes, formatDate, isAnimatedImage, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
 
 export type GalleryFile = {
   id: string;
@@ -52,7 +52,17 @@ function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => vo
   const imageStyles = { width: "100%", height: "auto", borderRadius: 8, cursor: onClick ? "pointer" : "default" } as const;
 
   if (isImage(file.mime)) {
-    return <Image src={file._url} alt={file.filename} width={800} height={600} style={imageStyles} onClick={onClick} />;
+    return (
+      <Image
+        src={file._url}
+        alt={file.filename}
+        width={800}
+        height={600}
+        style={imageStyles}
+        onClick={onClick}
+        unoptimized={isAnimatedImage(file.mime, file.filename)}
+      />
+    );
   }
 
   if (isVideo(file.mime)) {
@@ -341,6 +351,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
                   fill
                   sizes="100vw"
                   style={{ objectFit: "contain" }}
+                  unoptimized={isAnimatedImage(activeFile.mime, activeFile.filename)}
                 />
               </div>
             ) : isVideo(activeFile.mime) ? (

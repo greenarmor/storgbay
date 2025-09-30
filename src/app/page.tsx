@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { publicUrl } from "@/lib/s3";
-import { isImage } from "@/lib/file-utils";
+import { isAnimatedImage, isImage } from "@/lib/file-utils";
 
 export default async function Home() {
   const galleries = await prisma.gallery.findMany({
@@ -23,7 +23,14 @@ export default async function Home() {
             <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
               {g.items.slice(0, 4).map((it: GalleryItemRecord) => (
                 isImage(it.file.mime) ? (
-                  <Image key={it.id} src={publicUrl(it.file.key)} alt={it.file.filename} width={160} height={120} />
+                  <Image
+                    key={it.id}
+                    src={publicUrl(it.file.key)}
+                    alt={it.file.filename}
+                    width={160}
+                    height={120}
+                    unoptimized={isAnimatedImage(it.file.mime, it.file.filename)}
+                  />
                 ) : (
                   <div
                     key={it.id}
