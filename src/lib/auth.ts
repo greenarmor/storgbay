@@ -7,7 +7,7 @@ import { compare } from "bcryptjs";
 
 export type AppSessionUser = DefaultSession["user"] & {
   id: string;
-  role: "USER" | "ADMIN";
+  role: "USER" | "UPLOADER" | "ADMIN";
 };
 
 export type AppSession = DefaultSession & {
