@@ -35,7 +35,12 @@ export async function GET(req: Request) {
     const session = await auth();
     if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
     const galleries = await prisma.gallery.findMany({
-      where: { ownerId: session.user.id },
+      where: {
+        OR: [
+          { ownerId: session.user.id },
+          { managers: { some: { userId: session.user.id } } },
+        ],
+      },
       orderBy: { createdAt: "desc" },
       include: { items: { include: { file: true } } },
     });

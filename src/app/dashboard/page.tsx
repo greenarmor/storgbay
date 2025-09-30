@@ -21,8 +21,14 @@ export default async function Dashboard() {
   }
 
   const myGalleries = await prisma.gallery.findMany({
-    where: { ownerId: session.user.id },
+    where: {
+      OR: [
+        { ownerId: session.user.id },
+        { managers: { some: { userId: session.user.id } } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
+    include: { owner: true },
   });
 
   type GalleryRecord = (typeof myGalleries)[number];
@@ -31,9 +37,9 @@ export default async function Dashboard() {
     <div style={{ display: "grid", gap: 32 }}>
       <section style={{ display: "grid", gap: 16 }}>
         <div>
-          <h2 style={{ marginBottom: 4 }}>My galleries</h2>
+          <h2 style={{ marginBottom: 4 }}>Galleries I manage</h2>
           <p style={{ margin: 0, color: "#555" }}>
-            Create curated collections and control whether they are public or private.
+            Create curated collections, control their visibility, and collaborate with other uploaders.
           </p>
         </div>
         <div style={{ padding: 16, border: "1px solid #eee", borderRadius: 12, background: "#fff" }}>
@@ -46,21 +52,28 @@ export default async function Dashboard() {
               <p style={{ margin: 0 }}>You haven&apos;t created any galleries yet.</p>
             </li>
           ) : (
-            myGalleries.map((g: GalleryRecord) => (
-              <li key={g.id} style={{ padding: 16, border: "1px solid #eee", borderRadius: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                  <div>
-                    <Link href={`/gallery/${g.id}`} style={{ fontWeight: 600 }}>
-                      {g.title}
+            myGalleries.map((g: GalleryRecord) => {
+              const isOwner = g.ownerId === session.user.id;
+              const ownerLabel = g.owner?.name ?? g.owner?.email ?? "Unknown owner";
+              return (
+                <li key={g.id} style={{ padding: 16, border: "1px solid #eee", borderRadius: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                    <div>
+                      <Link href={`/gallery/${g.id}`} style={{ fontWeight: 600 }}>
+                        {g.title}
+                      </Link>
+                      <div style={{ fontSize: 12, color: "#666" }}>Visibility: {g.visibility}</div>
+                      {!isOwner && (
+                        <div style={{ fontSize: 12, color: "#666" }}>Owner: {ownerLabel}</div>
+                      )}
+                    </div>
+                    <Link href={`/gallery/${g.id}`} style={{ color: "#1a73e8" }}>
+                      View
                     </Link>
-                    <div style={{ fontSize: 12, color: "#666" }}>Visibility: {g.visibility}</div>
                   </div>
-                  <Link href={`/gallery/${g.id}`} style={{ color: "#1a73e8" }}>
-                    View
-                  </Link>
-                </div>
-              </li>
-            ))
+                </li>
+              );
+            })
           )}
         </ul>
       </section>

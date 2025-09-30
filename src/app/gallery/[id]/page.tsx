@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { GalleryViewer } from "@/components/GalleryViewer";
+import { GalleryManagersPanel } from "@/components/GalleryManagersPanel";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { canViewGallery } from "@/lib/gallery-permissions";
+import { canManageGallery, canViewGallery } from "@/lib/gallery-permissions";
 import { publicUrl, presignGet } from "@/lib/s3";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -23,7 +24,11 @@ export default async function GalleryPage({ params }: PageProps) {
   const session = await auth();
   const g = await prisma.gallery.findUnique({
     where: { id },
-    include: { items: { include: { file: true } } },
+    include: {
+      items: { include: { file: true } },
+      managers: { include: { user: true } },
+      owner: true,
+    },
   });
   if (!g) notFound();
   if (!canViewGallery(g, session)) notFound();
@@ -48,5 +53,32 @@ export default async function GalleryPage({ params }: PageProps) {
     createdAt: file.createdAt.toISOString(),
   }));
 
-  return <GalleryViewer gallery={galleryInfo} files={serialisableFiles} />;
+  const canManage = canManageGallery(g, session);
+
+  const initialManagers = g.managers
+    .filter((manager) => manager.userId !== g.ownerId)
+    .map((manager) => ({
+      id: manager.id,
+      userId: manager.userId,
+      name: manager.user?.name ?? null,
+      email: manager.user?.email ?? null,
+      addedAt: manager.createdAt.toISOString(),
+    }))
+    .sort((a, b) => a.addedAt.localeCompare(b.addedAt));
+
+  const canEditManagers = session?.user?.id === g.ownerId || session?.user?.role === "ADMIN";
+
+  return (
+    <div style={{ display: "grid", gap: 24 }}>
+      <GalleryViewer gallery={galleryInfo} files={serialisableFiles} />
+      {canManage && (
+        <GalleryManagersPanel
+          galleryId={g.id}
+          canEdit={canEditManagers}
+          initialManagers={initialManagers}
+          ownerLabel={g.owner?.name ?? g.owner?.email ?? "Gallery owner"}
+        />
+      )}
+    </div>
+  );
 }

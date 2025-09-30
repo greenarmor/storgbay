@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { canManageGallery } from "@/lib/gallery-permissions";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -15,9 +16,9 @@ export async function POST(req: Request, context: RouteContext) {
 
   const gallery = await prisma.gallery.findUnique({
     where: { id },
-    include: { items: true },
+    include: { items: true, managers: true },
   });
-  if (!gallery || gallery.ownerId !== session.user.id) {
+  if (!gallery || !canManageGallery(gallery, session)) {
     return new Response("Forbidden", { status: 403 });
   }
 

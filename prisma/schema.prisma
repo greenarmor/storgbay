@@ -30,6 +30,7 @@ model User {
   sessions      Session[]
   files         File[]
   galleries     Gallery[]  @relation("UserGalleries")
+  managedGalleries GalleryManager[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -85,6 +86,7 @@ model Gallery {
   owner       User         @relation("UserGalleries", fields: [ownerId], references: [id], onDelete: Cascade)
   items       GalleryItem[]
   shares      ShareLink[]
+  managers    GalleryManager[]
 }
 
 model GalleryItem {
@@ -104,4 +106,15 @@ model ShareLink {
   expiresAt DateTime?
   createdAt DateTime  @default(now())
   gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+}
+
+model GalleryManager {
+  id        String   @id @default(cuid())
+  galleryId String
+  userId    String
+  createdAt DateTime @default(now())
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([galleryId, userId])
 }
