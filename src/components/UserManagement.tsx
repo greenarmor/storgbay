@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState, FormEvent } from "react";
-import type { Role } from "@prisma/client";
+
+type RoleValue = "USER" | "UPLOADER" | "ADMIN";
 
 type AdminUser = {
   id: string;
   name: string | null;
   email: string | null;
-  role: Role;
+  role: RoleValue;
   createdAt: string;
   updatedAt: string;
 };
@@ -21,7 +22,7 @@ type FormState = {
   name: string;
   email: string;
   password: string;
-  role: Role;
+  role: RoleValue;
 };
 
 const defaultFormState: FormState = {
@@ -31,7 +32,7 @@ const defaultFormState: FormState = {
   role: "UPLOADER",
 };
 
-const roleLabels: Record<Role, string> = {
+const roleLabels: Record<RoleValue, string> = {
   USER: "Viewer",
   UPLOADER: "Uploader",
   ADMIN: "Admin",
@@ -92,7 +93,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
     }
   }
 
-  async function updateUser(userId: string, updates: Partial<{ role: Role; password: string }>) {
+  async function updateUser(userId: string, updates: Partial<{ role: RoleValue; password: string }>) {
     clearMessages();
     setBusyUserId(userId);
     try {
@@ -117,7 +118,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
     }
   }
 
-  async function handleRoleChange(userId: string, role: Role) {
+  async function handleRoleChange(userId: string, role: RoleValue) {
     await updateUser(userId, { role });
   }
 
@@ -208,7 +209,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
             <span style={{ fontWeight: 600 }}>Role</span>
             <select
               value={formState.role}
-              onChange={(event) => setFormState((prev) => ({ ...prev, role: event.target.value as Role }))}
+              onChange={(event) => setFormState((prev) => ({ ...prev, role: event.target.value as RoleValue }))}
             >
               {Object.entries(roleLabels).map(([role, label]) => (
                 <option key={role} value={role}>
@@ -250,7 +251,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
                   <td style={{ padding: "12px" }}>
                     <select
                       value={user.role}
-                      onChange={(event) => handleRoleChange(user.id, event.target.value as Role)}
+                      onChange={(event) => handleRoleChange(user.id, event.target.value as RoleValue)}
                       disabled={busyUserId === user.id || user.id === currentUserId}
                     >
                       {Object.entries(roleLabels).map(([role, label]) => (

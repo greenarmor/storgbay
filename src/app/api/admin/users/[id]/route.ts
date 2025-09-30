@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { Prisma, Role } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 
@@ -55,10 +55,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     return new Response("You cannot change your own role.", { status: 400 });
   }
 
-  const updateData: { role?: Role; passwordHash?: string } = {};
+  const updateData: Prisma.UserUpdateInput = {};
 
   if (data.role) {
-    updateData.role = data.role;
+    updateData.role = data.role as unknown as Prisma.UserUpdateInput["role"];
   }
 
   if (data.password) {

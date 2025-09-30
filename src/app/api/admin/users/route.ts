@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         name: data.name ?? null,
         email: data.email,
         passwordHash,
-        role: data.role,
+        role: data.role as unknown as Prisma.UserCreateInput["role"],
       },
     });
     return Response.json(sanitizeUser(user), { status: 201 });
