@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const endpoint = process.env.S3_ENDPOINT!; // e.g., http://localhost:9000
@@ -44,4 +44,10 @@ export function publicUrl(key: string) {
     .join("/");
   // Works for public assets if you've enabled anonymous read on the bucket
   return `${base}/${bucket}/${normalizedKey}`;
+}
+
+export async function deleteObject(key: string) {
+  const bucket = process.env.S3_BUCKET!;
+  const cmd = new DeleteObjectCommand({ Bucket: bucket, Key: key });
+  await s3.send(cmd);
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { AdminFileManager } from "@/components/AdminFileManager";
 import { UserManagement } from "@/components/UserManagement";
 import type { Role } from "@prisma/client";
 
@@ -41,6 +42,7 @@ export default async function AdminPage() {
         </p>
       </header>
       <UserManagement initialUsers={adminUsers} currentUserId={session.user.id} />
+      <AdminFileManager />
     </div>
   );
 }

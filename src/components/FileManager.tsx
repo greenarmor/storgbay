@@ -135,6 +135,41 @@ export function FileManager() {
     setSelectedIds(new Set());
   }
 
+  async function handleDeleteSelected() {
+    const fileIds = Array.from(selectedIds);
+    if (fileIds.length === 0) {
+      setStatus("Select one or more files first.");
+      return;
+    }
+    const confirmMessage =
+      fileIds.length === 1
+        ? "Delete this file? This action cannot be undone."
+        : `Delete ${fileIds.length} files? This action cannot be undone.`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setStatus(null);
+    try {
+      for (const fileId of fileIds) {
+        const res = await fetch(`/api/files/${fileId}`, { method: "DELETE" });
+        if (!res.ok) {
+          const message = await res.text();
+          throw new Error(message || "Failed to delete file.");
+        }
+      }
+      setStatus(`Deleted ${fileIds.length} file${fileIds.length === 1 ? "" : "s"}.`);
+      clearSelection();
+      await refreshLibrary();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete selected files.";
+      setError(message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCreateGallery() {
     const fileIds = Array.from(selectedIds);
     if (fileIds.length === 0) {
@@ -252,6 +287,20 @@ export function FileManager() {
         </button>
         <button onClick={clearSelection} disabled={selectedCount === 0} style={{ padding: "4px 10px", borderRadius: 6 }}>
           Clear selection
+        </button>
+        <button
+          onClick={() => void handleDeleteSelected()}
+          disabled={selectedCount === 0 || busy}
+          style={{
+            padding: "6px 12px",
+            borderRadius: 6,
+            background: "#dc2626",
+            color: "white",
+            border: "none",
+            cursor: selectedCount === 0 || busy ? "not-allowed" : "pointer",
+          }}
+        >
+          Delete selected
         </button>
         <button onClick={handleCreateGallery} disabled={selectedCount === 0 || busy} style={{ padding: "6px 12px", borderRadius: 6 }}>
           Create gallery from selection
