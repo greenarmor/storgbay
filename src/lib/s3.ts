@@ -37,6 +37,11 @@ export async function presignGet(key: string) {
 
 export function publicUrl(key: string) {
   const bucket = process.env.S3_BUCKET!;
+  const base = endpoint?.replace(/\/$/, "") ?? "";
+  const normalizedKey = key
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
   // Works for public assets if you've enabled anonymous read on the bucket
-  return `${endpoint}/${bucket}/${encodeURIComponent(key)}`;
+  return `${base}/${bucket}/${normalizedKey}`;
 }
