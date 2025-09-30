@@ -11,7 +11,7 @@ A minimal, ready-to-run scaffold for a **file sharing + image gallery** web app.
 
 ## Local Setup (no Docker)
 1. **MySQL**: create DB `fileshare` and user `app`/`apppass`; or update `DATABASE_URL`.
-2. **MinIO**: run locally on `:9000`, create bucket `uploads`, optionally enable anonymous read for public galleries.
+2. **MinIO**: run locally on `:9000`, create bucket `uploads`, optionally enable anonymous read for public galleries. Use the new root credentials (`MINIO_ROOT_USER=root` / `MINIO_ROOT_PASSWORD=<your-password>`) or mirror them via `S3_ACCESS_KEY`/`S3_SECRET_KEY` in your `.env` file.
 3. Copy env and install deps:
 ```bash
 cp .env.example .env

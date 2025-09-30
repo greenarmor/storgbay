@@ -2,13 +2,22 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const endpoint = process.env.S3_ENDPOINT!; // e.g., http://localhost:9000
+const accessKeyId = process.env.S3_ACCESS_KEY ?? process.env.MINIO_ROOT_USER;
+const secretAccessKey = process.env.S3_SECRET_KEY ?? process.env.MINIO_ROOT_PASSWORD;
+
+if (!accessKeyId || !secretAccessKey) {
+  throw new Error(
+    "Missing S3 credentials. Please set S3_ACCESS_KEY/S3_SECRET_KEY or MINIO_ROOT_USER/MINIO_ROOT_PASSWORD."
+  );
+}
+
 export const s3 = new S3Client({
   region: process.env.S3_REGION || "us-east-1",
   endpoint,
   forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
   credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY!,
-    secretAccessKey: process.env.S3_SECRET_KEY!,
+    accessKeyId,
+    secretAccessKey,
   },
 });
 
