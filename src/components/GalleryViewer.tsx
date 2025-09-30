@@ -260,10 +260,11 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.85)",
+            background: "rgba(0,0,0,0.92)",
             display: "flex",
             flexDirection: "column",
             padding: 24,
+            gap: 24,
             zIndex: 1000,
           }}
         >
@@ -313,28 +314,55 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
             </div>
           </div>
 
-          <div style={{ flex: 1, display: "grid", placeItems: "center", marginTop: 24 }}>
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             {isImage(activeFile.mime) ? (
-              <Image
-                src={activeFile._url}
-                alt={activeFile.filename}
-                width={1200}
-                height={800}
-                style={{ maxWidth: "100%", height: "auto", borderRadius: 12 }}
-              />
+              <div
+                style={{
+                  position: "relative",
+                  width: "min(1200px, 100%)",
+                  height: "100%",
+                  maxHeight: "100%",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  background: "#000",
+                }}
+              >
+                <Image
+                  src={activeFile._url}
+                  alt={activeFile.filename}
+                  fill
+                  sizes="100vw"
+                  style={{ objectFit: "contain" }}
+                />
+              </div>
             ) : isVideo(activeFile.mime) ? (
               <video
                 src={activeFile._url}
                 controls
                 autoPlay={isPlaying}
-                style={{ maxWidth: "100%", maxHeight: "80vh", borderRadius: 12 }}
+                style={{
+                  width: "min(1200px, 100%)",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  borderRadius: 12,
+                  objectFit: "contain",
+                  background: "#000",
+                }}
               />
             ) : isAudio(activeFile.mime) ? (
-              <audio src={activeFile._url} controls autoPlay={isPlaying} style={{ width: "100%" }} />
+              <audio src={activeFile._url} controls autoPlay={isPlaying} style={{ width: "min(800px, 100%)" }} />
             ) : isPdf(activeFile.mime) ? (
               <iframe
                 src={activeFile._url}
-                style={{ width: "90vw", height: "80vh", border: "none", borderRadius: 12, background: "#fff" }}
+                style={{ width: "min(1200px, 100%)", height: "100%", border: "none", borderRadius: 12, background: "#fff" }}
               />
             ) : (
               <div
@@ -344,6 +372,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
                   padding: 32,
                   borderRadius: 12,
                   textAlign: "center",
+                  maxWidth: "min(640px, 100%)",
                 }}
               >
                 <p>{activeFile.mime || "Unsupported file"}</p>
