@@ -5,8 +5,8 @@ import { z } from "zod";
 const CreateSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  visibility: z.enum(["PUBLIC","PRIVATE"]).default("PUBLIC"),
-  fileIds: z.array(z.string()).default([])
+  visibility: z.enum(["PUBLIC", "PRIVATE"]).default("PUBLIC"),
+  fileIds: z.array(z.string()).default([]),
 });
 
 export async function POST(req: Request) {
@@ -16,7 +16,9 @@ export async function POST(req: Request) {
   const { title, description, visibility, fileIds } = CreateSchema.parse(body);
   const gallery = await prisma.gallery.create({
     data: {
-      title, description, visibility,
+      title,
+      description,
+      visibility,
       ownerId: session.user.id,
       items: { create: fileIds.map((id: string, i: number) => ({ fileId: id, position: i })) },
     },
@@ -25,7 +27,21 @@ export async function POST(req: Request) {
   return Response.json(gallery);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const scope = searchParams.get("scope");
+
+  if (scope === "mine") {
+    const session = await auth();
+    if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+    const galleries = await prisma.gallery.findMany({
+      where: { ownerId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: { items: { include: { file: true } } },
+    });
+    return Response.json(galleries);
+  }
+
   const galleries = await prisma.gallery.findMany({
     where: { visibility: "PUBLIC" },
     orderBy: { createdAt: "desc" },

@@ -1,25 +1,79 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { FileManager } from "@/components/FileManager";
+import { CreateGalleryForm } from "@/components/CreateGalleryForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { CreateGalleryForm } from "@/components/CreateGalleryForm";
 
-export default async function Dashboard(){
+export default async function Dashboard() {
   const session = await auth();
-  if(!session) return <div>Please sign in.</div>;
-  const myGalleries = await prisma.gallery.findMany({ where: { ownerId: session.user.id }, orderBy: { createdAt: 'desc' } });
+  if (!session) {
+    return (
+      <div style={{ display: "grid", gap: 12 }}>
+        <h2>Dashboard</h2>
+        <p>You need to sign in to access your dashboard.</p>
+        <Link href="/api/auth/signin" style={{ color: "#1a73e8" }}>
+          Go to sign in
+        </Link>
+      </div>
+    );
+  }
+
+  const myGalleries = await prisma.gallery.findMany({
+    where: { ownerId: session.user.id },
+    orderBy: { createdAt: "desc" },
+  });
+
   type GalleryRecord = (typeof myGalleries)[number];
+
   return (
-    <div>
-      <h2>My Galleries</h2>
-      {/* Simple create form */}
-      <CreateGalleryForm />
-      <ul>
-        {myGalleries.map((g: GalleryRecord) => (
-          <li key={g.id}><Link href={`/gallery/${g.id}`}>{g.title}</Link> – {g.visibility}</li>
-        ))}
-      </ul>
+    <div style={{ display: "grid", gap: 32 }}>
+      <section style={{ display: "grid", gap: 16 }}>
+        <div>
+          <h2 style={{ marginBottom: 4 }}>My galleries</h2>
+          <p style={{ margin: 0, color: "#555" }}>
+            Create curated collections and control whether they are public or private.
+          </p>
+        </div>
+        <div style={{ padding: 16, border: "1px solid #eee", borderRadius: 12, background: "#fff" }}>
+          <h3 style={{ marginTop: 0 }}>Create a new gallery</h3>
+          <CreateGalleryForm />
+        </div>
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
+          {myGalleries.length === 0 ? (
+            <li style={{ padding: 16, border: "1px solid #eee", borderRadius: 12 }}>
+              <p style={{ margin: 0 }}>You haven&apos;t created any galleries yet.</p>
+            </li>
+          ) : (
+            myGalleries.map((g: GalleryRecord) => (
+              <li key={g.id} style={{ padding: 16, border: "1px solid #eee", borderRadius: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <div>
+                    <Link href={`/gallery/${g.id}`} style={{ fontWeight: 600 }}>
+                      {g.title}
+                    </Link>
+                    <div style={{ fontSize: 12, color: "#666" }}>Visibility: {g.visibility}</div>
+                  </div>
+                  <Link href={`/gallery/${g.id}`} style={{ color: "#1a73e8" }}>
+                    View
+                  </Link>
+                </div>
+              </li>
+            ))
+          )}
+        </ul>
+      </section>
+
+      <section style={{ display: "grid", gap: 16 }}>
+        <div>
+          <h2 style={{ marginBottom: 4 }}>My files</h2>
+          <p style={{ margin: 0, color: "#555" }}>
+            Browse your uploads, create new galleries, and add items to existing collections without leaving the dashboard.
+          </p>
+        </div>
+        <FileManager />
+      </section>
     </div>
   );
 }
