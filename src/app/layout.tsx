@@ -4,6 +4,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { HeaderSearch } from "@/components/HeaderSearch";
+import { DriveSidebar } from "@/components/DriveSidebar";
 import { auth, AppSession } from "@/lib/auth";
 
 const publicNav = [{ href: "/", label: "Public" }];
@@ -46,23 +47,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           </div>
         </header>
         <div className="drive-content">
-          <aside className="drive-sidebar" aria-label="Primary navigation">
-            <nav className="drive-nav">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href} className="drive-nav-link">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            {session?.user && (
-              <div className="drive-sidebar-footer">
-                <p className="drive-sidebar-caption">Organize and share with ease.</p>
-                <Link href="/upload" className="drive-cta">
-                  New upload
-                </Link>
-              </div>
-            )}
-          </aside>
+          <DriveSidebar navItems={navItems} sessionUser={session?.user ?? null} />
           <main className="drive-main">{children}</main>
         </div>
       </body>
