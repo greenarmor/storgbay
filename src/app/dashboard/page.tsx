@@ -14,7 +14,7 @@ export default async function Dashboard() {
       <div style={{ display: "grid", gap: 12 }}>
         <h2>Dashboard</h2>
         <p>You need to sign in to access your dashboard.</p>
-        <Link href="/login" style={{ color: "#1a73e8" }}>
+        <Link href="/login" style={{ color: "var(--drive-accent)" }}>
           Go to sign in
         </Link>
       </div>
@@ -39,17 +39,29 @@ export default async function Dashboard() {
       <section style={{ display: "grid", gap: 16 }}>
         <div>
           <h2 style={{ marginBottom: 4 }}>Galleries I manage</h2>
-          <p style={{ margin: 0, color: "#555" }}>
+          <p style={{ margin: 0, color: "var(--drive-muted)" }}>
             Create curated collections, control their visibility, and collaborate with other uploaders.
           </p>
         </div>
-        <div style={{ padding: 16, border: "1px solid #eee", borderRadius: 12, background: "#fff" }}>
-          <h3 style={{ marginTop: 0 }}>Create a new gallery</h3>
+        <div className="drive-panel">
+          <div className="drive-panel-header">
+            <h3 style={{ margin: 0 }}>Create a new gallery</h3>
+            <p className="drive-panel-description">
+              Name your gallery and choose whether it should be visible to the whole workspace or remain private.
+            </p>
+          </div>
           <CreateGalleryForm />
         </div>
         <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
           {myGalleries.length === 0 ? (
-            <li style={{ padding: 16, border: "1px solid #eee", borderRadius: 12 }}>
+            <li
+              style={{
+                padding: 16,
+                border: "1px solid var(--drive-border)",
+                borderRadius: "var(--drive-radius-md)",
+                background: "var(--drive-surface)",
+              }}
+            >
               <p style={{ margin: 0 }}>You haven&apos;t created any galleries yet.</p>
             </li>
           ) : (
@@ -57,18 +69,24 @@ export default async function Dashboard() {
               const isOwner = g.ownerId === session.user.id;
               const ownerLabel = g.owner?.name ?? g.owner?.email ?? "Unknown owner";
               return (
-                <li key={g.id} style={{ padding: 16, border: "1px solid #eee", borderRadius: 12 }}>
+                <li
+                  key={g.id}
+                  style={{
+                    padding: 16,
+                    border: "1px solid var(--drive-border)",
+                    borderRadius: "var(--drive-radius-md)",
+                    background: "var(--drive-surface)",
+                  }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                     <div>
                       <Link href={`/gallery/${g.id}`} style={{ fontWeight: 600 }}>
                         {g.title}
                       </Link>
-                      <div style={{ fontSize: 12, color: "#666" }}>Visibility: {g.visibility}</div>
-                      {!isOwner && (
-                        <div style={{ fontSize: 12, color: "#666" }}>Owner: {ownerLabel}</div>
-                      )}
+                      <div style={{ fontSize: 12, color: "var(--drive-muted)" }}>Visibility: {g.visibility}</div>
+                      {!isOwner && <div style={{ fontSize: 12, color: "var(--drive-muted)" }}>Owner: {ownerLabel}</div>}
                     </div>
-                    <Link href={`/gallery/${g.id}`} style={{ color: "#1a73e8" }}>
+                    <Link href={`/gallery/${g.id}`} style={{ color: "var(--drive-accent)" }}>
                       View
                     </Link>
                   </div>
@@ -82,7 +100,7 @@ export default async function Dashboard() {
       <section style={{ display: "grid", gap: 16 }}>
         <div>
           <h2 style={{ marginBottom: 4 }}>My files</h2>
-          <p style={{ margin: 0, color: "#555" }}>
+          <p style={{ margin: 0, color: "var(--drive-muted)" }}>
             Browse your uploads, create new galleries, and add items to existing collections without leaving the dashboard.
           </p>
         </div>
@@ -92,7 +110,7 @@ export default async function Dashboard() {
       <section style={{ display: "grid", gap: 16 }}>
         <div>
           <h2 style={{ marginBottom: 4 }}>Account security</h2>
-          <p style={{ margin: 0, color: "#555" }}>
+          <p style={{ margin: 0, color: "var(--drive-muted)" }}>
             Change your password. You can only update your own account details from here.
           </p>
         </div>

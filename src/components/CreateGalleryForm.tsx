@@ -21,9 +21,9 @@ export function CreateGalleryForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="title" placeholder="Gallery title" />
-      <select name="visibility" defaultValue="PUBLIC">
+    <form className="create-gallery-form" onSubmit={handleSubmit}>
+      <input name="title" placeholder="Gallery title" aria-label="Gallery title" />
+      <select name="visibility" defaultValue="PUBLIC" aria-label="Visibility">
         <option value="PUBLIC">Public</option>
         <option value="PRIVATE">Private</option>
       </select>

@@ -109,19 +109,19 @@ export function GalleryManagersPanel({ galleryId, initialManagers, canEdit, owne
   }
 
   return (
-    <section style={{ display: "grid", gap: 12, background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 16 }}>
-      <header style={{ display: "grid", gap: 4 }}>
+    <section className="drive-panel">
+      <header className="drive-panel-header">
         <h2 style={{ margin: 0 }}>Gallery managers</h2>
-        <p style={{ margin: 0, color: "#555" }}>
+        <p className="drive-panel-description">
           The owner ({ownerLabel}) can manage this gallery. Add uploaders or admins to help curate it.
         </p>
       </header>
 
       {status && (
-        <div style={{ padding: "8px 12px", borderRadius: 8, background: "#e6f4ea", color: "#137333" }}>{status}</div>
+        <div className="drive-alert drive-alert--success">{status}</div>
       )}
       {error && (
-        <div style={{ padding: "8px 12px", borderRadius: 8, background: "#fce8e6", color: "#c5221f" }}>{error}</div>
+        <div className="drive-alert drive-alert--error">{error}</div>
       )}
 
       {canEdit && (
@@ -134,13 +134,19 @@ export function GalleryManagersPanel({ galleryId, initialManagers, canEdit, owne
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc" }}
             />
           </label>
           <button
             type="submit"
             disabled={loading}
-            style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #1a73e8", background: "#1a73e8", color: "#fff" }}
+            style={{
+              padding: "0.65rem 1.3rem",
+              borderRadius: "var(--drive-radius-sm)",
+              border: "1px solid var(--drive-accent)",
+              background: "var(--drive-accent)",
+              color: "#fff",
+              boxShadow: "none",
+            }}
           >
             {loading ? "Adding…" : "Add manager"}
           </button>
@@ -150,23 +156,32 @@ export function GalleryManagersPanel({ galleryId, initialManagers, canEdit, owne
       <div style={{ display: "grid", gap: 8 }}>
         <strong>Managers</strong>
         {managers.length === 0 ? (
-          <p style={{ margin: 0, color: "#666" }}>No additional managers yet.</p>
+          <p style={{ margin: 0, color: "var(--drive-muted)" }}>No additional managers yet.</p>
         ) : (
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
             {managers.map((manager) => (
               <li
                 key={manager.id}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, border: "1px solid #eee", borderRadius: 10, padding: "10px 12px" }}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                  border: "1px solid var(--drive-border)",
+                  borderRadius: "var(--drive-radius-sm)",
+                  padding: "10px 12px",
+                  background: "var(--drive-surface)",
+                }}
               >
                 <div style={{ display: "grid" }}>
                   <span style={{ fontWeight: 600 }}>{manager.name || manager.email || "Unknown user"}</span>
-                  {manager.email && <span style={{ color: "#666" }}>{manager.email}</span>}
+                  {manager.email && <span style={{ color: "var(--drive-muted)" }}>{manager.email}</span>}
                 </div>
                 {canEdit && (
                   <button
                     onClick={() => void handleRemoveManager(manager.userId)}
                     disabled={busyId === manager.userId}
-                    style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d93025", background: "#fff", color: "#d93025" }}
+                    className="drive-button-danger"
                   >
                     {busyId === manager.userId ? "Removing…" : "Remove"}
                   </button>
@@ -181,7 +196,8 @@ export function GalleryManagersPanel({ galleryId, initialManagers, canEdit, owne
         <button
           onClick={() => void refreshManagers()}
           disabled={refreshing}
-          style={{ padding: "6px 10px", borderRadius: 6, width: "fit-content" }}
+          className="drive-button-ghost"
+          style={{ width: "fit-content" }}
         >
           {refreshing ? "Refreshing…" : "Refresh list"}
         </button>

@@ -248,10 +248,10 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <strong>File library</strong>
-          <button onClick={() => void refreshLibrary()} disabled={loading} style={{ padding: "4px 10px", borderRadius: 6 }}>
+          <button onClick={() => void refreshLibrary()} disabled={loading} className="drive-button-ghost">
             Refresh
           </button>
-          <Link href="/upload" style={{ fontSize: 14, color: "#1a73e8" }}>
+          <Link href="/upload" style={{ fontSize: 14, color: "var(--drive-accent)" }}>
             Upload more files
           </Link>
         </div>
@@ -261,12 +261,11 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc", minWidth: 200 }}
+            style={{ minWidth: 200 }}
           />
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as Filter)}
-            style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc" }}
           >
             {FILTERS.map((f) => (
               <option key={f.value} value={f.value}>
@@ -277,43 +276,43 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
         </div>
       </div>
 
-      {error && (
-        <div style={{ padding: 12, borderRadius: 8, background: "#fee2e2", color: "#7f1d1d" }}>{error}</div>
-      )}
-      {status && !error && (
-        <div style={{ padding: 12, borderRadius: 8, background: "#e0f2fe", color: "#1d4ed8" }}>{status}</div>
-      )}
+      {error && <div className="drive-alert drive-alert--error">{error}</div>}
+      {status && !error && <div className="drive-alert drive-alert--info">{status}</div>}
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <span>{selectedCount} selected</span>
-        <button onClick={toggleSelectAll} disabled={!hasFiles} style={{ padding: "4px 10px", borderRadius: 6 }}>
+        <button onClick={toggleSelectAll} disabled={!hasFiles} className="drive-button-ghost">
           {hasFiles && filteredFiles.every((file) => selectedIds.has(file.id)) ? "Unselect all" : "Select all"}
         </button>
-        <button onClick={clearSelection} disabled={selectedCount === 0} style={{ padding: "4px 10px", borderRadius: 6 }}>
+        <button onClick={clearSelection} disabled={selectedCount === 0} className="drive-button-ghost">
           Clear selection
         </button>
         <button
           onClick={() => void handleDeleteSelected()}
           disabled={selectedCount === 0 || busy}
-          style={{
-            padding: "6px 12px",
-            borderRadius: 6,
-            background: "#dc2626",
-            color: "white",
-            border: "none",
-            cursor: selectedCount === 0 || busy ? "not-allowed" : "pointer",
-          }}
+          className="drive-button-danger"
+          style={{ cursor: selectedCount === 0 || busy ? "not-allowed" : "pointer" }}
         >
           Delete selected
         </button>
-        <button onClick={handleCreateGallery} disabled={selectedCount === 0 || busy} style={{ padding: "6px 12px", borderRadius: 6 }}>
+        <button
+          onClick={handleCreateGallery}
+          disabled={selectedCount === 0 || busy}
+          style={{
+            padding: "0.6rem 1.1rem",
+            borderRadius: "var(--drive-radius-sm)",
+            border: "1px solid var(--drive-accent)",
+            background: "var(--drive-accent)",
+            color: "#fff",
+            boxShadow: "none",
+          }}
+        >
           Create gallery from selection
         </button>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <select
             value={selectedGalleryId}
             onChange={(e) => setSelectedGalleryId(e.target.value)}
-            style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc" }}
           >
             <option value="">Choose gallery…</option>
             {galleries.map((g) => (
@@ -322,7 +321,11 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
               </option>
             ))}
           </select>
-          <button onClick={handleAddToGallery} disabled={selectedCount === 0 || busy || !selectedGalleryId} style={{ padding: "6px 12px", borderRadius: 6 }}>
+          <button
+            onClick={handleAddToGallery}
+            disabled={selectedCount === 0 || busy || !selectedGalleryId}
+            className="drive-button-muted"
+          >
             Add to gallery
           </button>
         </div>
@@ -336,11 +339,29 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
         }}
       >
         {loading && files.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", borderRadius: 8, border: "1px solid #eee" }}>Loading files…</div>
+          <div
+            style={{
+              padding: 32,
+              textAlign: "center",
+              borderRadius: "var(--drive-radius-sm)",
+              border: "1px solid var(--drive-border)",
+              background: "var(--drive-surface)",
+            }}
+          >
+            Loading files…
+          </div>
         ) : !hasFiles ? (
-          <div style={{ padding: 32, textAlign: "center", borderRadius: 8, border: "1px solid #eee" }}>
+          <div
+            style={{
+              padding: 32,
+              textAlign: "center",
+              borderRadius: "var(--drive-radius-sm)",
+              border: "1px solid var(--drive-border)",
+              background: "var(--drive-surface)",
+            }}
+          >
             <p style={{ marginBottom: 12 }}>You have no uploads yet.</p>
-            <Link href="/upload" style={{ color: "#1a73e8" }}>
+            <Link href="/upload" style={{ color: "var(--drive-accent)" }}>
               Go to the upload page
             </Link>
           </div>
@@ -351,14 +372,14 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
               <label
                 key={file.id}
                 style={{
-                  border: isSelected ? "2px solid #1a73e8" : "1px solid #eee",
-                  borderRadius: 10,
+                  border: isSelected ? "2px solid var(--drive-accent)" : "1px solid var(--drive-border)",
+                  borderRadius: "var(--drive-radius-sm)",
                   padding: 12,
                   display: "grid",
                   gap: 8,
                   cursor: "pointer",
-                  boxShadow: isSelected ? "0 0 0 3px rgba(26,115,232,0.2)" : "0 1px 2px rgba(15,23,42,0.08)",
-                  background: "#fff",
+                  boxShadow: isSelected ? `0 0 0 3px var(--drive-selection-ring)` : "0 1px 2px rgba(15,23,42,0.08)",
+                  background: "var(--drive-surface)",
                 }}
               >
                 <input
@@ -382,15 +403,24 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
                   ) : isAudio(file.mime) ? (
                     <audio src={file.url} controls style={{ width: "100%" }} />
                   ) : isPdf(file.mime) ? (
-                    <iframe src={file.url} style={{ width: "100%", height: 200, border: "1px solid #eee", borderRadius: 8 }} />
+                    <iframe
+                      src={file.url}
+                      style={{
+                        width: "100%",
+                        height: 200,
+                        border: "1px solid var(--drive-border)",
+                        borderRadius: "var(--drive-radius-sm)",
+                        background: "var(--drive-surface)",
+                      }}
+                    />
                   ) : (
                     <div
                       style={{
                         display: "grid",
                         placeItems: "center",
-                        background: "#fafafa",
-                        border: "1px dashed #ddd",
-                        borderRadius: 8,
+                        background: "var(--drive-muted-surface)",
+                        border: "1px dashed var(--drive-border)",
+                        borderRadius: "var(--drive-radius-sm)",
                         height: 180,
                       }}
                     >
@@ -402,10 +432,10 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
                   <strong style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {file.filename}
                   </strong>
-                  <span style={{ fontSize: 12, color: "#555" }}>{file.mime}</span>
-                  <span style={{ fontSize: 12, color: "#777" }}>{formatBytes(file.bytes)}</span>
-                  <span style={{ fontSize: 12, color: "#777" }}>{formatDate(file.createdAt)}</span>
-                  <a href={file.url} download style={{ fontSize: 12, color: "#1a73e8" }}>
+                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{file.mime}</span>
+                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatBytes(file.bytes)}</span>
+                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatDate(file.createdAt)}</span>
+                  <a href={file.url} download style={{ fontSize: 12, color: "var(--drive-accent)" }}>
                     Download
                   </a>
                 </div>

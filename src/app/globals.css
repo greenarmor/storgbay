@@ -8,6 +8,21 @@
   --drive-muted: #6b7280;
   --drive-accent: #1a73e8;
   --drive-accent-soft: rgba(26, 115, 232, 0.16);
+  --drive-info-bg: rgba(59, 130, 246, 0.16);
+  --drive-info-border: rgba(59, 130, 246, 0.35);
+  --drive-info-text: #1d4ed8;
+  --drive-success-bg: rgba(34, 197, 94, 0.12);
+  --drive-success-border: rgba(34, 197, 94, 0.28);
+  --drive-success-text: #166534;
+  --drive-error-bg: rgba(248, 113, 113, 0.18);
+  --drive-error-border: rgba(248, 113, 113, 0.32);
+  --drive-error-text: #b91c1c;
+  --drive-danger: #dc2626;
+  --drive-danger-hover: #b91c1c;
+  --drive-danger-soft: rgba(220, 38, 38, 0.18);
+  --drive-danger-contrast: #ffffff;
+  --drive-muted-surface: rgba(148, 163, 184, 0.12);
+  --drive-selection-ring: rgba(26, 115, 232, 0.22);
   --drive-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
   --drive-radius-lg: 18px;
   --drive-radius-md: 12px;
@@ -34,6 +49,21 @@
   --drive-muted: #94a3b8;
   --drive-accent: #60a5fa;
   --drive-accent-soft: rgba(96, 165, 250, 0.32);
+  --drive-info-bg: rgba(59, 130, 246, 0.22);
+  --drive-info-border: rgba(147, 197, 253, 0.45);
+  --drive-info-text: #bfdbfe;
+  --drive-success-bg: rgba(34, 197, 94, 0.24);
+  --drive-success-border: rgba(134, 239, 172, 0.48);
+  --drive-success-text: #bbf7d0;
+  --drive-error-bg: rgba(248, 113, 113, 0.22);
+  --drive-error-border: rgba(254, 202, 202, 0.45);
+  --drive-error-text: #fecaca;
+  --drive-danger: #f87171;
+  --drive-danger-hover: #ef4444;
+  --drive-danger-soft: rgba(239, 68, 68, 0.28);
+  --drive-danger-contrast: #0b1120;
+  --drive-muted-surface: rgba(15, 23, 42, 0.65);
+  --drive-selection-ring: rgba(96, 165, 250, 0.32);
   --drive-shadow: 0 18px 42px rgba(2, 6, 23, 0.6);
   --drive-app-bg: radial-gradient(circle at 12% 18%, rgba(96, 165, 250, 0.18), transparent 48%),
     radial-gradient(circle at 88% 4%, rgba(37, 99, 235, 0.22), transparent 40%),
@@ -360,6 +390,130 @@ button:focus-visible,
   border: 1px solid var(--drive-border);
   box-shadow: var(--drive-shadow);
   overflow: hidden;
+}
+
+.drive-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.4rem;
+  background: var(--drive-surface);
+  border: 1px solid var(--drive-border);
+  border-radius: var(--drive-radius-md);
+  box-shadow: var(--drive-shadow);
+}
+
+.drive-panel-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.drive-panel-description {
+  margin: 0;
+  color: var(--drive-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.drive-alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--drive-radius-sm);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.drive-alert--info {
+  background: var(--drive-info-bg);
+  border-color: var(--drive-info-border);
+  color: var(--drive-info-text);
+}
+
+.drive-alert--success {
+  background: var(--drive-success-bg);
+  border-color: var(--drive-success-border);
+  color: var(--drive-success-text);
+}
+
+.drive-alert--error {
+  background: var(--drive-error-bg);
+  border-color: var(--drive-error-border);
+  color: var(--drive-error-text);
+}
+
+button.drive-button-ghost,
+button.drive-button-danger,
+button.drive-button-muted {
+  border-radius: var(--drive-radius-sm);
+  padding: 0.55rem 1rem;
+  background: var(--drive-surface);
+  color: var(--drive-text);
+  border: 1px solid var(--drive-border);
+  box-shadow: none;
+  gap: 0.5rem;
+}
+
+button.drive-button-ghost:hover,
+button.drive-button-muted:hover {
+  background: var(--drive-accent-soft);
+  border-color: var(--drive-accent);
+  color: var(--drive-accent);
+  transform: none;
+  box-shadow: none;
+}
+
+button.drive-button-muted {
+  background: var(--drive-muted-surface);
+}
+
+button.drive-button-muted:hover {
+  background: var(--drive-accent-soft);
+}
+
+button.drive-button-danger {
+  background: transparent;
+  color: var(--drive-danger);
+  border-color: var(--drive-danger);
+}
+
+button.drive-button-danger:hover {
+  background: var(--drive-danger-soft);
+  color: var(--drive-danger-contrast);
+  border-color: var(--drive-danger-hover);
+  transform: none;
+  box-shadow: none;
+}
+
+button.drive-button-danger:disabled {
+  opacity: 0.65;
+  background: transparent;
+  color: var(--drive-danger);
+  border-color: var(--drive-danger);
+  cursor: not-allowed;
+}
+
+.create-gallery-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.create-gallery-form input,
+.create-gallery-form select {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.create-gallery-form button {
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--drive-radius-sm);
+  border: 1px solid var(--drive-accent);
+  background: var(--drive-accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+.create-gallery-form button:hover {
+  transform: translateY(-1px);
 }
 
 .drive-main--expanded {
