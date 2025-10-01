@@ -16,7 +16,7 @@ type FileWithUrl = {
   mime: string | null;
   bytes: number;
   createdAt: Date;
-  _url: string;
+  _url: string | null;
 };
 
 export default async function GalleryPage({ params }: PageProps) {
@@ -36,8 +36,16 @@ export default async function GalleryPage({ params }: PageProps) {
   const filesWithUrl: FileWithUrl[] = await Promise.all(
     g.items.map(async (item) => {
       const file = item.file;
-      const url = g.visibility === "PUBLIC" ? publicUrl(file.key) : await presignGet(file.key);
-      return { ...file, _url: url };
+
+      try {
+        const url =
+          g.visibility === "PUBLIC" ? publicUrl(file.key) : await presignGet(file.key);
+
+        return { ...file, _url: url ?? null };
+      } catch (error) {
+        console.error("Failed to resolve file URL", { key: file.key, error });
+        return { ...file, _url: null };
+      }
     })
   );
 

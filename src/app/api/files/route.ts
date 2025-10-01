@@ -7,6 +7,9 @@ export async function GET() {
   if (!session) return Response.json([], { status: 200 });
   const files = await prisma.file.findMany({ where: { ownerId: session.user.id }, orderBy: { createdAt: "desc" } });
   type FileRecord = (typeof files)[number];
-  const filesWithUrls = files.map((file: FileRecord) => ({ ...file, url: publicUrl(file.key) }));
+  const filesWithUrls = files.map((file: FileRecord) => {
+    const url = publicUrl(file.key);
+    return { ...file, url };
+  });
   return Response.json(filesWithUrls);
 }

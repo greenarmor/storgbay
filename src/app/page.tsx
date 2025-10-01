@@ -21,33 +21,42 @@ export default async function Home() {
           <div style={{ border: "1px solid #eee", padding: 12, borderRadius: 8 }}>
             <h3>{g.title}</h3>
             <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
-              {g.items.slice(0, 4).map((it: GalleryItemRecord) => (
-                isImage(it.file.mime) ? (
+              {g.items.slice(0, 4).map((it: GalleryItemRecord) => {
+                if (!isImage(it.file.mime)) {
+                  return (
+                    <div
+                      key={it.id}
+                      style={{
+                        width: 160,
+                        height: 120,
+                        display: "grid",
+                        placeItems: "center",
+                        background: "#fafafa",
+                        border: "1px dashed #ddd",
+                        borderRadius: 8,
+                      }}
+                    >
+                      <small>{it.file.mime}</small>
+                    </div>
+                  );
+                }
+
+                const imageUrl = publicUrl(it.file.key);
+                if (!imageUrl) {
+                  return null;
+                }
+
+                return (
                   <Image
                     key={it.id}
-                    src={publicUrl(it.file.key)}
+                    src={imageUrl}
                     alt={it.file.filename}
                     width={160}
                     height={120}
                     unoptimized={isAnimatedImage(it.file.mime, it.file.filename)}
                   />
-                ) : (
-                  <div
-                    key={it.id}
-                    style={{
-                      width: 160,
-                      height: 120,
-                      display: "grid",
-                      placeItems: "center",
-                      background: "#fafafa",
-                      border: "1px dashed #ddd",
-                      borderRadius: 8,
-                    }}
-                  >
-                    <small>{it.file.mime}</small>
-                  </div>
-                )
-              ))}
+                );
+              })}
             </div>
           </div>
         </Link>

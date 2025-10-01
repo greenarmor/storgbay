@@ -21,17 +21,21 @@ export async function GET() {
     },
   });
 
-  const payload = files.map((file) => ({
-    id: file.id,
-    filename: file.filename,
-    mime: file.mime,
-    bytes: file.bytes,
-    createdAt: file.createdAt.toISOString(),
-    ownerId: file.ownerId,
-    ownerName: file.owner?.name ?? null,
-    ownerEmail: file.owner?.email ?? null,
-    url: publicUrl(file.key),
-  }));
+  const payload = files.map((file) => {
+    const url = publicUrl(file.key);
+
+    return {
+      id: file.id,
+      filename: file.filename,
+      mime: file.mime,
+      bytes: file.bytes,
+      createdAt: file.createdAt.toISOString(),
+      ownerId: file.ownerId,
+      ownerName: file.owner?.name ?? null,
+      ownerEmail: file.owner?.email ?? null,
+      url,
+    };
+  });
 
   return Response.json(payload);
 }

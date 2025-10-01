@@ -22,7 +22,9 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: "desc" },
+  });
 
   const adminUsers: AdminUser[] = users.map((user) => ({
     id: user.id,

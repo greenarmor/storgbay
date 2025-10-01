@@ -10,7 +10,7 @@ export type GalleryFile = {
   mime: string | null;
   bytes: number;
   createdAt: string;
-  _url: string;
+  _url: string | null;
 };
 
 export type GalleryInfo = {
@@ -50,6 +50,26 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
 
 function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => void }) {
   const imageStyles = { width: "100%", height: "auto", borderRadius: 8, cursor: onClick ? "pointer" : "default" } as const;
+
+  if (!file._url) {
+    return (
+      <div
+        style={{
+          display: "grid",
+          placeItems: "center",
+          background: "#fafafa",
+          border: "1px dashed #ddd",
+          borderRadius: 8,
+          height: 200,
+          color: "#666",
+          textAlign: "center",
+          padding: 16,
+        }}
+      >
+        <span>Preview unavailable</span>
+      </div>
+    );
+  }
 
   if (isImage(file.mime)) {
     return (
@@ -109,6 +129,12 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
       return matchesFilter(file, filter);
     });
   }, [files, filter, search]);
+
+  const firstViewableIndex = useMemo(
+    () => filteredFiles.findIndex((file) => Boolean(file._url)),
+    [filteredFiles]
+  );
+  const hasViewableFiles = firstViewableIndex !== -1;
 
   useEffect(() => {
     if (activeIndex !== null && activeIndex >= filteredFiles.length) {
@@ -196,11 +222,13 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               </option>
             ))}
           </select>
-          {filteredFiles.length > 0 && (
+          {hasViewableFiles && (
             <button
               onClick={() => {
-                setActiveIndex(0);
-                setIsPlaying(true);
+                if (firstViewableIndex !== -1) {
+                  setActiveIndex(firstViewableIndex);
+                  setIsPlaying(true);
+                }
               }}
               style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #1a73e8", background: "#1a73e8", color: "#fff" }}
             >
@@ -226,7 +254,10 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
             gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
           }}
         >
-          {filteredFiles.map((file, index) => (
+          {filteredFiles.map((file, index) => {
+            const canView = Boolean(file._url);
+
+            return (
             <div
               key={file.id}
               style={{
@@ -238,7 +269,17 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
                 boxShadow: "0 1px 2px rgba(15,23,42,0.08)",
               }}
             >
-              <MediaPreview file={file} onClick={() => { setIsPlaying(false); setActiveIndex(index); }} />
+              <MediaPreview
+                file={file}
+                onClick={
+                  canView
+                    ? () => {
+                        setIsPlaying(false);
+                        setActiveIndex(index);
+                      }
+                    : undefined
+                }
+              />
               <div style={{ display: "grid", gap: 4 }}>
                 <strong style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {file.filename}
@@ -249,17 +290,34 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                 <button
-                  onClick={() => { setIsPlaying(false); setActiveIndex(index); }}
-                  style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #1a73e8", background: "#1a73e8", color: "#fff" }}
+                  onClick={() => {
+                    if (!canView) return;
+                    setIsPlaying(false);
+                    setActiveIndex(index);
+                  }}
+                  disabled={!canView}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #1a73e8",
+                    background: canView ? "#1a73e8" : "#e0e0e0",
+                    color: canView ? "#fff" : "#777",
+                    cursor: canView ? "pointer" : "not-allowed",
+                  }}
                 >
                   View
                 </button>
-                <a href={file._url} download style={{ fontSize: 12, color: "#1a73e8" }}>
-                  Download
-                </a>
+                {canView ? (
+                  <a href={file._url ?? undefined} download style={{ fontSize: 12, color: "#1a73e8" }}>
+                    Download
+                  </a>
+                ) : (
+                  <span style={{ fontSize: 12, color: "#999" }}>No download</span>
+                )}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
 
@@ -333,7 +391,21 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               justifyContent: "center",
             }}
           >
-            {isImage(activeFile.mime) ? (
+            {!activeFile._url ? (
+              <div
+                style={{
+                  color: "#fff",
+                  background: "rgba(255,255,255,0.1)",
+                  padding: 32,
+                  borderRadius: 12,
+                  textAlign: "center",
+                  maxWidth: "min(640px, 100%)",
+                }}
+              >
+                <p>Preview unavailable</p>
+                <span style={{ color: "#bbb" }}>No download available</span>
+              </div>
+            ) : isImage(activeFile.mime) ? (
               <div
                 style={{
                   position: "relative",
@@ -356,7 +428,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               </div>
             ) : isVideo(activeFile.mime) ? (
               <video
-                src={activeFile._url}
+                src={activeFile._url ?? undefined}
                 controls
                 autoPlay={isPlaying}
                 style={{
@@ -369,10 +441,10 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
                 }}
               />
             ) : isAudio(activeFile.mime) ? (
-              <audio src={activeFile._url} controls autoPlay={isPlaying} style={{ width: "min(800px, 100%)" }} />
+              <audio src={activeFile._url ?? undefined} controls autoPlay={isPlaying} style={{ width: "min(800px, 100%)" }} />
             ) : isPdf(activeFile.mime) ? (
               <iframe
-                src={activeFile._url}
+                src={activeFile._url ?? undefined}
                 style={{ width: "min(1200px, 100%)", height: "100%", border: "none", borderRadius: 12, background: "#fff" }}
               />
             ) : (
@@ -387,7 +459,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
                 }}
               >
                 <p>{activeFile.mime || "Unsupported file"}</p>
-                <a href={activeFile._url} download style={{ color: "#8ab4f8" }}>
+                <a href={activeFile._url ?? undefined} download style={{ color: "#8ab4f8" }}>
                   Download file
                 </a>
               </div>
