@@ -1,9 +1,19 @@
 {
   "name": "@greenarmor/storgbay",
   "version": "1.0.0",
-  "publishConfig": { "access": "restricted" }
+  "private": false,
   "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
   "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
