@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </span>
               <span className="drive-logo-text">Storgbay</span>
             </Link>
-            <HeaderSearch />
+            {session?.user && <HeaderSearch />}
           </div>
           <div className="drive-header-actions">
             <div className="drive-header-pills" role="list">
