@@ -1,4 +1,10 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  type PutObjectCommandInput,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const endpoint = process.env.S3_ENDPOINT; // e.g., http://localhost:9000
@@ -29,9 +35,13 @@ function ensureClient() {
   return cachedClient;
 }
 
-export async function presignPut(key: string, contentType: string) {
+export async function presignPut(key: string, contentType: string, contentLength?: number) {
   const bucket = process.env.S3_BUCKET!;
-  const cmd = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType });
+  const input: PutObjectCommandInput = { Bucket: bucket, Key: key, ContentType: contentType };
+  if (typeof contentLength === "number" && Number.isFinite(contentLength) && contentLength >= 0) {
+    input.ContentLength = contentLength;
+  }
+  const cmd = new PutObjectCommand(input);
   const url = await getSignedUrl(ensureClient(), cmd, { expiresIn: 60 * 5 });
   return { url, bucket, key };
 }

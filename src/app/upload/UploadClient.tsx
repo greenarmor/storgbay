@@ -24,7 +24,11 @@ export function UploadClient() {
       const response = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, mime: file.type || "application/octet-stream" }),
+        body: JSON.stringify({
+          filename: file.name,
+          mime: file.type || "application/octet-stream",
+          size: file.size,
+        }),
       });
       if (!response.ok) {
         const message = await response.text();
@@ -33,11 +37,15 @@ export function UploadClient() {
       }
       const { url } = await response.json();
       setStatus(`Uploading ${file.name}...`);
-      await fetch(url, {
+      const uploadResponse = await fetch(url, {
         method: "PUT",
         body: file,
         headers: { "Content-Type": file.type || "application/octet-stream" },
       });
+      if (!uploadResponse.ok) {
+        setStatus(`Failed to upload ${file.name}.`);
+        return;
+      }
     }
     setStatus("All uploads complete!");
     setFiles([]);
