@@ -17,7 +17,9 @@ type DriveSidebarProps = {
 export function DriveSidebar({ navItems, sessionUser }: DriveSidebarProps) {
   const pathname = usePathname();
   const isGalleryRoute = pathname?.startsWith("/gallery");
+  const isHomeRoute = pathname === "/";
   const shouldHideSidebar = !sessionUser && isGalleryRoute;
+  const shouldShowCta = Boolean(sessionUser) || isHomeRoute;
 
   if (shouldHideSidebar) {
     return null;
@@ -32,7 +34,7 @@ export function DriveSidebar({ navItems, sessionUser }: DriveSidebarProps) {
           </Link>
         ))}
       </nav>
-      {sessionUser && (
+      {shouldShowCta && (
         <div className="drive-sidebar-footer">
           <p className="drive-sidebar-caption">Organize and share with ease.</p>
           <Link href="/upload" className="drive-cta">
