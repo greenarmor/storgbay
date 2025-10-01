@@ -6,9 +6,10 @@ import Link from "next/link";
 import clsx from "clsx";
 import { HeaderSearch } from "@/components/HeaderSearch";
 import { DriveSidebar } from "@/components/DriveSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { auth, AppSession } from "@/lib/auth";
 
-const publicNav = [{ href: "/", label: "Public" }];
+const publicNav = [{ href: "/", label: "Home" }];
 const authenticatedNav = [
   ...publicNav,
   { href: "/dashboard", label: "My Drive" },
@@ -36,6 +37,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {session?.user && <HeaderSearch />}
           </div>
           <div className="drive-header-actions">
+            <ThemeToggle />
             <div className="drive-header-pills" role="list">
               <span role="listitem" className="drive-pill muted">
                 {session?.user?.email ?? "Guest"}
@@ -45,9 +47,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   Sign out
                 </a>
               ) : (
-                <a role="listitem" className="drive-pill" href="/api/auth/signin">
-                  Sign in
-                </a>
+                <a role="listitem" className="drive-pill" href="/login">
               )}
             </div>
           </div>

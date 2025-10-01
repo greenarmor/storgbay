@@ -14,7 +14,7 @@ export default async function Dashboard() {
       <div style={{ display: "grid", gap: 12 }}>
         <h2>Dashboard</h2>
         <p>You need to sign in to access your dashboard.</p>
-        <Link href="/api/auth/signin" style={{ color: "#1a73e8" }}>
+        <Link href="/login" style={{ color: "#1a73e8" }}>
           Go to sign in
         </Link>
       </div>

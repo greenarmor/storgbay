@@ -7,11 +7,46 @@
   --drive-text: #1f2937;
   --drive-muted: #6b7280;
   --drive-accent: #1a73e8;
-  --drive-accent-soft: #e8f0fe;
+  --drive-accent-soft: rgba(26, 115, 232, 0.16);
   --drive-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
   --drive-radius-lg: 18px;
   --drive-radius-md: 12px;
   --drive-radius-sm: 8px;
+  --drive-app-bg: linear-gradient(180deg, rgba(248, 250, 255, 0.9) 0%, rgba(239, 244, 255, 0.95) 100%);
+  --drive-landing-bg: radial-gradient(circle at 20% 20%, rgba(26, 115, 232, 0.14), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(17, 94, 204, 0.18), transparent 40%),
+    linear-gradient(180deg, rgba(248, 250, 255, 0.9) 0%, rgba(239, 244, 255, 0.95) 100%);
+  --drive-header-bg: rgba(255, 255, 255, 0.9);
+  --drive-logo-bg: rgba(26, 115, 232, 0.08);
+  --drive-logo-border: rgba(26, 115, 232, 0.12);
+  --drive-pill-bg: rgba(26, 115, 232, 0.12);
+  --drive-pill-bg-hover: rgba(26, 115, 232, 0.18);
+  --drive-pill-muted-bg: rgba(148, 163, 184, 0.16);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --drive-bg: #0b1120;
+  --drive-surface: #111827;
+  --drive-border: #1f2937;
+  --drive-border-strong: #273549;
+  --drive-text: #e2e8f0;
+  --drive-muted: #94a3b8;
+  --drive-accent: #60a5fa;
+  --drive-accent-soft: rgba(96, 165, 250, 0.32);
+  --drive-shadow: 0 18px 42px rgba(2, 6, 23, 0.6);
+  --drive-app-bg: radial-gradient(circle at 12% 18%, rgba(96, 165, 250, 0.18), transparent 48%),
+    radial-gradient(circle at 88% 4%, rgba(37, 99, 235, 0.22), transparent 40%),
+    linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  --drive-landing-bg: radial-gradient(circle at 20% 20%, rgba(96, 165, 250, 0.18), transparent 55%),
+    radial-gradient(circle at 78% 0%, rgba(37, 99, 235, 0.24), transparent 45%),
+    linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  --drive-header-bg: rgba(15, 23, 42, 0.82);
+  --drive-logo-bg: rgba(96, 165, 250, 0.16);
+  --drive-logo-border: rgba(96, 165, 250, 0.28);
+  --drive-pill-bg: rgba(96, 165, 250, 0.18);
+  --drive-pill-bg-hover: rgba(96, 165, 250, 0.26);
+  --drive-pill-muted-bg: rgba(148, 163, 184, 0.18);
 }
 
 * {
@@ -25,15 +60,24 @@ body {
 
 body {
   margin: 0;
-  font-family: "Inter", "Roboto", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  background: linear-gradient(180deg, rgba(248, 250, 255, 0.9) 0%, rgba(239, 244, 255, 0.95) 100%);
+  font-family:
+    "Inter",
+    "Roboto",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    "Helvetica Neue",
+    sans-serif;
+  background: var(--drive-app-bg);
   color: var(--drive-text);
 }
 
 a {
   color: inherit;
   text-decoration: none;
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 a:hover {
@@ -55,7 +99,9 @@ button,
   align-items: center;
   gap: 0.5rem;
   box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 button:hover,
@@ -63,6 +109,14 @@ button:hover,
 .drive-cta:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 24px rgba(26, 115, 232, 0.3);
+}
+
+button:disabled,
+.drive-cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  box-shadow: none;
+  transform: none;
 }
 
 button:focus-visible,
@@ -88,7 +142,7 @@ button:focus-visible,
   align-items: center;
   justify-content: space-between;
   padding: 1.1rem 2.2rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--drive-header-bg);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--drive-border);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
@@ -108,12 +162,12 @@ button:focus-visible,
   gap: 0.6rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  background: rgba(26, 115, 232, 0.08);
+  background: var(--drive-logo-bg);
   color: var(--drive-accent);
   font-weight: 700;
   letter-spacing: 0.01em;
   font-size: 1.05rem;
-  box-shadow: inset 0 0 0 1px rgba(26, 115, 232, 0.12);
+  box-shadow: inset 0 0 0 1px var(--drive-logo-border);
 }
 
 .drive-logo-mark {
@@ -156,6 +210,40 @@ button:focus-visible,
 .drive-header-actions {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: var(--drive-surface);
+  border: 1px solid var(--drive-border);
+  color: var(--drive-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: none;
+  transform: none;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--drive-accent-soft);
+  border-color: var(--drive-accent);
+  color: var(--drive-accent);
+  transform: none;
+  box-shadow: none;
+}
+
+.theme-toggle-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.theme-toggle-label {
+  line-height: 1;
 }
 
 .drive-header-pills {
@@ -165,17 +253,19 @@ button:focus-visible,
 }
 
 .drive-pill {
-  background: rgba(26, 115, 232, 0.12);
+  background: var(--drive-pill-bg);
   color: var(--drive-accent);
   font-size: 0.85rem;
   padding: 0.45rem 1.1rem;
   box-shadow: none;
   border-radius: 999px;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .drive-pill:hover {
-  background: rgba(26, 115, 232, 0.18);
+  background: var(--drive-pill-muted-bg);
   color: var(--drive-accent);
   transform: none;
   box-shadow: none;
@@ -220,7 +310,10 @@ button:focus-visible,
   font-weight: 600;
   color: var(--drive-muted);
   background: transparent;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .drive-nav-link:hover {
@@ -232,7 +325,11 @@ button:focus-visible,
 .drive-sidebar-footer {
   padding: 1rem;
   border-radius: var(--drive-radius-md);
-  background: linear-gradient(135deg, rgba(26, 115, 232, 0.08), rgba(26, 115, 232, 0.18));
+  background: linear-gradient(
+    135deg,
+    rgba(26, 115, 232, 0.08),
+    rgba(26, 115, 232, 0.18)
+  );
   display: grid;
   gap: 0.8rem;
   text-align: left;
@@ -292,7 +389,9 @@ textarea {
   border: 1px solid var(--drive-border);
   background: var(--drive-surface);
   color: var(--drive-text);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 input:focus,
@@ -301,6 +400,152 @@ textarea:focus {
   border-color: var(--drive-accent);
   box-shadow: 0 0 0 3px var(--drive-accent-soft);
   outline: none;
+}
+.auth-page {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1.5rem;
+  background: radial-gradient(circle at 10% 20%, rgba(26, 115, 232, 0.08), transparent 55%),
+    radial-gradient(circle at 90% 0%, rgba(26, 115, 232, 0.06), transparent 50%);
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  background: var(--drive-surface);
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: var(--drive-shadow);
+  padding: 2.4rem;
+  display: grid;
+  gap: 1.6rem;
+}
+
+.auth-card-header {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.auth-badge {
+  justify-self: start;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: var(--drive-pill-bg);
+  color: var(--drive-accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.auth-title {
+  margin: 0;
+  font-size: clamp(1.75rem, 2vw + 1.2rem, 2.4rem);
+}
+
+.auth-subtitle {
+  margin: 0;
+  color: var(--drive-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.auth-field label {
+  font-weight: 600;
+}
+
+.auth-field input {
+  width: 100%;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.auth-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.auth-field-label a {
+  color: var(--drive-accent);
+  font-weight: 500;
+}
+
+.auth-error {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: var(--drive-radius-sm);
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  font-weight: 600;
+  border-left: 4px solid #ef4444;
+}
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--drive-muted);
+}
+
+.auth-footer a {
+  color: var(--drive-accent);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .drive-header {
+  box-shadow: 0 1px 0 rgba(2, 6, 23, 0.65);
+}
+
+[data-theme="dark"] button,
+[data-theme="dark"] .drive-cta {
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+
+[data-theme="dark"] button:hover,
+[data-theme="dark"] .drive-cta:hover {
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.4);
+}
+
+[data-theme="dark"] .theme-toggle {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: var(--drive-border);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+  background: rgba(37, 99, 235, 0.24);
+  border-color: rgba(96, 165, 250, 0.6);
+}
+
+[data-theme="dark"] .auth-page {
+  background: radial-gradient(circle at 12% 22%, rgba(96, 165, 250, 0.22), transparent 52%),
+    radial-gradient(circle at 88% 0%, rgba(37, 99, 235, 0.2), transparent 45%);
+}
+
+[data-theme="dark"] .auth-field input {
+  box-shadow: inset 0 1px 2px rgba(2, 6, 23, 0.45);
+}
+
+[data-theme="dark"] .auth-error {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fecaca;
+  border-left-color: #f87171;
 }
 
 @media (max-width: 1024px) {
@@ -327,15 +572,31 @@ textarea:focus {
   }
 }
 
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-page {
+    padding: 2rem 1rem;
+  }
+}
+
+
 body.landing-active {
-  background: radial-gradient(circle at 20% 20%, rgba(26, 115, 232, 0.14), transparent 55%),
+  background: var(--drive-landing-bg);
+    ),
     radial-gradient(circle at 80% 0%, rgba(17, 94, 204, 0.18), transparent 40%),
-    linear-gradient(180deg, rgba(248, 250, 255, 0.9) 0%, rgba(239, 244, 255, 0.95) 100%);
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 255, 0.9) 0%,
+      rgba(239, 244, 255, 0.95) 100%
+    );
 }
 
 body.landing-active .drive-header {
   background: transparent;
-  border-bottom-color: rgba(228, 233, 242, 0.6);
+  border-bottom-color: var(--drive-border);
   box-shadow: none;
 }
 
@@ -422,7 +683,9 @@ body.landing-active .drive-main {
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .landing-cta.primary {
@@ -485,7 +748,12 @@ body.landing-active .drive-main {
   position: absolute;
   inset: 0;
   border-radius: 36% 64% 42% 58% / 42% 36% 64% 58%;
-  background: radial-gradient(circle at 30% 30%, rgba(26, 115, 232, 0.45), transparent 55%),
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(26, 115, 232, 0.45),
+      transparent 55%
+    ),
     rgba(26, 115, 232, 0.18);
   filter: blur(0.2px);
   mix-blend-mode: screen;
@@ -493,13 +761,23 @@ body.landing-active .drive-main {
 
 .landing-parallax-layer:nth-child(2) {
   inset: 12%;
-  background: radial-gradient(circle at 70% 40%, rgba(56, 189, 248, 0.55), transparent 50%),
+  background:
+    radial-gradient(
+      circle at 70% 40%,
+      rgba(56, 189, 248, 0.55),
+      transparent 50%
+    ),
     rgba(26, 115, 232, 0.22);
 }
 
 .landing-parallax-layer:nth-child(3) {
   inset: 24%;
-  background: radial-gradient(circle at 40% 70%, rgba(14, 116, 144, 0.5), transparent 55%),
+  background:
+    radial-gradient(
+      circle at 40% 70%,
+      rgba(14, 116, 144, 0.5),
+      transparent 55%
+    ),
     rgba(26, 115, 232, 0.25);
 }
 
@@ -621,7 +899,11 @@ body.landing-active .drive-main {
   width: min(720px, 100%);
   padding: 3rem;
   border-radius: calc(var(--drive-radius-lg) * 1.2);
-  background: linear-gradient(135deg, rgba(26, 115, 232, 0.92), rgba(56, 189, 248, 0.85));
+  background: linear-gradient(
+    135deg,
+    rgba(26, 115, 232, 0.92),
+    rgba(56, 189, 248, 0.85)
+  );
   color: #fff;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
   display: grid;
@@ -681,4 +963,7 @@ body.landing-active .drive-main {
   .drive-nav-link {
     width: 100%;
   }
+}
+.landing-highlight {
+  display: inline;
 }
