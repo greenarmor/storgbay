@@ -1,7 +1,6 @@
 {
-  "name": "storgbay",
+  "name": "@greenarmor/storgbay",
   "version": "1.0.0",
-  "private": false,
   "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
   "license": "UNLICENSED",
   "scripts": {
