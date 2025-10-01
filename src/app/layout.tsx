@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import "./globals.css";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import clsx from "clsx";
 import { HeaderSearch } from "@/components/HeaderSearch";
 import { DriveSidebar } from "@/components/DriveSidebar";
 import { auth, AppSession } from "@/lib/auth";
@@ -19,6 +20,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const baseNav = session?.user ? authenticatedNav : publicNav;
   const navItems =
     session?.user?.role === "ADMIN" ? [...baseNav, { href: "/admin", label: "Admin Console" }] : baseNav;
+  const showSidebar = Boolean(session?.user);
 
   return (
     <html lang="en">
@@ -38,17 +40,21 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <span role="listitem" className="drive-pill muted">
                 {session?.user?.email ?? "Guest"}
               </span>
-              {session?.user && (
+              {session?.user ? (
                 <a role="listitem" className="drive-pill" href="/api/auth/signout">
                   Sign out
+                </a>
+              ) : (
+                <a role="listitem" className="drive-pill" href="/api/auth/signin">
+                  Sign in
                 </a>
               )}
             </div>
           </div>
         </header>
         <div className="drive-content">
-          <DriveSidebar navItems={navItems} sessionUser={session?.user ?? null} />
-          <main className="drive-main">{children}</main>
+          {showSidebar && <DriveSidebar navItems={navItems} sessionUser={session?.user ?? null} />}
+          <main className={clsx("drive-main", { "drive-main--expanded": !showSidebar })}>{children}</main>
         </div>
       </body>
     </html>
