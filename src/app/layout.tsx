@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import "./globals.css";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { HeaderSearch } from "@/components/HeaderSearch";
 import { auth, AppSession } from "@/lib/auth";
 
 const publicNav = [{ href: "/", label: "Public" }];
@@ -29,19 +30,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </span>
               <span className="drive-logo-text">Storgbay</span>
             </Link>
-            <label className="drive-search" htmlFor="drive-search">
-              <span className="drive-search-icon" aria-hidden>
-                🔍
-              </span>
-              <input
-                id="drive-search"
-                className="drive-search-input"
-                type="search"
-                name="search"
-                placeholder="Search files, folders, galleries..."
-                autoComplete="off"
-              />
-            </label>
+            <HeaderSearch />
           </div>
           <div className="drive-header-actions">
             <div className="drive-header-pills" role="list">

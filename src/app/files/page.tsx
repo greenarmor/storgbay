@@ -4,8 +4,13 @@ import Link from "next/link";
 import { FileManager } from "@/components/FileManager";
 import { auth } from "@/lib/auth";
 
-export default async function FilesPage() {
+export default async function FilesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ query?: string }>;
+}) {
   const session = await auth();
+  const params = (await searchParams) ?? {};
   if (!session) {
     return (
       <div style={{ display: "grid", gap: 12 }}>
@@ -26,7 +31,7 @@ export default async function FilesPage() {
           Organise your uploads, build galleries, and preview any media in one place.
         </p>
       </div>
-      <FileManager />
+      <FileManager initialSearch={params.query ?? ""} />
     </div>
   );
 }

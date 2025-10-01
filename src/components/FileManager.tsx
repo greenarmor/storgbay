@@ -48,13 +48,13 @@ function matchesFilter(file: LibraryFile, filter: Filter): boolean {
   }
 }
 
-export function FileManager() {
+export function FileManager({ initialSearch = "" }: { initialSearch?: string } = {}) {
   const [files, setFiles] = useState<LibraryFile[]>([]);
   const [galleries, setGalleries] = useState<LibraryGallery[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedGalleryId, setSelectedGalleryId] = useState<string>("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -72,6 +72,10 @@ export function FileManager() {
   useEffect(() => {
     void refreshLibrary();
   }, []);
+
+  useEffect(() => {
+    setSearch(initialSearch);
+  }, [initialSearch]);
 
   async function refreshLibrary() {
     try {
