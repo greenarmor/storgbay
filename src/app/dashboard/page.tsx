@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { FileManager } from "@/components/FileManager";
 import { CreateGalleryForm } from "@/components/CreateGalleryForm";
+import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -86,6 +87,16 @@ export default async function Dashboard() {
           </p>
         </div>
         <FileManager />
+      </section>
+
+      <section style={{ display: "grid", gap: 16 }}>
+        <div>
+          <h2 style={{ marginBottom: 4 }}>Account security</h2>
+          <p style={{ margin: 0, color: "#555" }}>
+            Change your password. You can only update your own account details from here.
+          </p>
+        </div>
+        <ChangePasswordForm />
       </section>
     </div>
   );
