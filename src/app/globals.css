@@ -325,11 +325,9 @@ button:focus-visible,
 .drive-sidebar-footer {
   padding: 1rem;
   border-radius: var(--drive-radius-md);
-  background: linear-gradient(
-    135deg,
-    rgba(26, 115, 232, 0.08),
-    rgba(26, 115, 232, 0.18)
-  );
+  background: linear-gradient(135deg,
+      rgba(26, 115, 232, 0.08),
+      rgba(26, 115, 232, 0.18));
   display: grid;
   gap: 0.8rem;
   text-align: left;
@@ -370,7 +368,7 @@ button:focus-visible,
   margin: 0 auto;
 }
 
-.drive-main > *:first-child {
+.drive-main>*:first-child {
   margin-top: 0;
 }
 
@@ -401,6 +399,7 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--drive-accent-soft);
   outline: none;
 }
+
 .auth-page {
   min-height: 100%;
   display: grid;
@@ -585,13 +584,6 @@ textarea:focus {
 
 body.landing-active {
   background: var(--drive-landing-bg);
-    ),
-    radial-gradient(circle at 80% 0%, rgba(17, 94, 204, 0.18), transparent 40%),
-    linear-gradient(
-      180deg,
-      rgba(248, 250, 255, 0.9) 0%,
-      rgba(239, 244, 255, 0.95) 100%
-    );
 }
 
 body.landing-active .drive-header {
@@ -749,11 +741,9 @@ body.landing-active .drive-main {
   inset: 0;
   border-radius: 36% 64% 42% 58% / 42% 36% 64% 58%;
   background:
-    radial-gradient(
-      circle at 30% 30%,
+    radial-gradient(circle at 30% 30%,
       rgba(26, 115, 232, 0.45),
-      transparent 55%
-    ),
+      transparent 55%),
     rgba(26, 115, 232, 0.18);
   filter: blur(0.2px);
   mix-blend-mode: screen;
@@ -762,22 +752,18 @@ body.landing-active .drive-main {
 .landing-parallax-layer:nth-child(2) {
   inset: 12%;
   background:
-    radial-gradient(
-      circle at 70% 40%,
+    radial-gradient(circle at 70% 40%,
       rgba(56, 189, 248, 0.55),
-      transparent 50%
-    ),
+      transparent 50%),
     rgba(26, 115, 232, 0.22);
 }
 
 .landing-parallax-layer:nth-child(3) {
   inset: 24%;
   background:
-    radial-gradient(
-      circle at 40% 70%,
+    radial-gradient(circle at 40% 70%,
       rgba(14, 116, 144, 0.5),
-      transparent 55%
-    ),
+      transparent 55%),
     rgba(26, 115, 232, 0.25);
 }
 
@@ -899,11 +885,9 @@ body.landing-active .drive-main {
   width: min(720px, 100%);
   padding: 3rem;
   border-radius: calc(var(--drive-radius-lg) * 1.2);
-  background: linear-gradient(
-    135deg,
-    rgba(26, 115, 232, 0.92),
-    rgba(56, 189, 248, 0.85)
-  );
+  background: linear-gradient(135deg,
+      rgba(26, 115, 232, 0.92),
+      rgba(56, 189, 248, 0.85));
   color: #fff;
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
   display: grid;
@@ -964,6 +948,7 @@ body.landing-active .drive-main {
     width: 100%;
   }
 }
+
 .landing-highlight {
   display: inline;
 }

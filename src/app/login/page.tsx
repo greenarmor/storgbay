@@ -27,7 +27,7 @@ export default async function LoginPage() {
         <LoginForm />
         <div className="auth-footer">
           <p>
-            Having trouble signing in? <Link href="mailto:support@storgbay.com">Contact support</Link>.
+            Having trouble signing in? <Link href="mailto:support@storgbay.online">Contact support</Link>.
           </p>
         </div>
       </div>

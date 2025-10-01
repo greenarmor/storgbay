@@ -48,6 +48,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </a>
               ) : (
                 <a role="listitem" className="drive-pill" href="/login">
+                  Sign in
+                </a>
               )}
             </div>
           </div>
