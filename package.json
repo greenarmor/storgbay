@@ -1,18 +1,28 @@
 {
   "name": "@greenarmor/storgbay",
   "version": "1.0.1",
+  "private": false,
+  "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
+  "license": "UNLICENSED",
   "publishConfig": {
     "access": "restricted"
   },
-  "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
-  "license": "UNLICENSED",
+  "files": [
+    "dist/",
+    "src/",
+    ".prisma/",
+    "node_modules/.prisma/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
-    "start": "prisma generate && next start",
-    "postinstall": "prisma generate",
+    "start": "next start",
     "db:migrate": "prisma migrate dev --name init",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "release": "npx prisma generate && npm version patch && npm publish"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.5.0",
