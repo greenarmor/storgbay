@@ -160,7 +160,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
     <section style={{ display: "grid", gap: 24 }}>
       <div style={{ display: "grid", gap: 8 }}>
         <h2 style={{ margin: 0 }}>Invite or add a user</h2>
-        <p style={{ margin: 0, color: "#666" }}>
+        <p style={{ margin: 0, color: "var(--drive-muted)" }}>
           Admins can manage user access. Uploaders can contribute files and galleries.
         </p>
         <form
@@ -168,9 +168,9 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
           style={{
             display: "grid",
             gap: 12,
-            background: "#fff",
-            border: "1px solid #eee",
-            borderRadius: 12,
+            background: "var(--drive-surface)",
+            border: "1px solid var(--drive-border)",
+            borderRadius: "var(--drive-radius-md)",
             padding: 16,
             maxWidth: 520,
           }}
@@ -225,30 +225,52 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
       </div>
 
       {(feedback || error) && (
-        <div role="status" style={{ color: error ? "#b42318" : "#05603a" }}>
+        <div
+          role="status"
+          style={{ color: error ? "var(--drive-error-text)" : "var(--drive-success-text)" }}
+        >
           {error ?? feedback}
         </div>
       )}
 
       <div style={{ display: "grid", gap: 12 }}>
         <h2 style={{ margin: 0 }}>Team members</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
+        <div
+          style={{
+            overflowX: "auto",
+            border: "1px solid var(--drive-border)",
+            borderRadius: "var(--drive-radius-md)",
+            background: "var(--drive-surface)",
+          }}
+        >
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", minWidth: 480, borderRadius: "inherit" }}
+          >
             <thead>
-              <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
-                <th style={{ padding: "8px 12px" }}>Name</th>
-                <th style={{ padding: "8px 12px" }}>Email</th>
-                <th style={{ padding: "8px 12px" }}>Role</th>
-                <th style={{ padding: "8px 12px" }}>Created</th>
-                <th style={{ padding: "8px 12px", textAlign: "right" }}>Actions</th>
+              <tr
+                style={{
+                  textAlign: "left",
+                  borderBottom: "1px solid var(--drive-border)",
+                  background: "var(--drive-muted-surface)",
+                }}
+              >
+                <th style={{ padding: "10px 14px", fontSize: 12, color: "var(--drive-muted)" }}>Name</th>
+                <th style={{ padding: "10px 14px", fontSize: 12, color: "var(--drive-muted)" }}>Email</th>
+                <th style={{ padding: "10px 14px", fontSize: 12, color: "var(--drive-muted)" }}>Role</th>
+                <th style={{ padding: "10px 14px", fontSize: 12, color: "var(--drive-muted)" }}>Created</th>
+                <th
+                  style={{ padding: "10px 14px", textAlign: "right", fontSize: 12, color: "var(--drive-muted)" }}
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {sortedUsers.map((user) => (
-                <tr key={user.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                  <td style={{ padding: "12px" }}>{user.name ?? "—"}</td>
-                  <td style={{ padding: "12px" }}>{user.email ?? "—"}</td>
-                  <td style={{ padding: "12px" }}>
+                <tr key={user.id} style={{ borderBottom: "1px solid var(--drive-border)" }}>
+                  <td style={{ padding: "12px 14px" }}>{user.name ?? "—"}</td>
+                  <td style={{ padding: "12px 14px" }}>{user.email ?? "—"}</td>
+                  <td style={{ padding: "12px 14px" }}>
                     <select
                       value={user.role}
                       onChange={(event) => handleRoleChange(user.id, event.target.value as RoleValue)}
@@ -261,16 +283,24 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
                       ))}
                     </select>
                     {user.id === currentUserId && (
-                      <span style={{ marginLeft: 8, fontSize: 12, color: "#666" }}>(You)</span>
+                      <span style={{ marginLeft: 8, fontSize: 12, color: "var(--drive-muted)" }}>(You)</span>
                     )}
                   </td>
-                  <td style={{ padding: "12px" }}>{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td style={{ padding: "12px", textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <td style={{ padding: "12px 14px" }}>{new Date(user.createdAt).toLocaleDateString()}</td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      textAlign: "right",
+                      display: "flex",
+                      gap: 8,
+                      justifyContent: "flex-end",
+                    }}
+                  >
                     <button
                       type="button"
                       onClick={() => handlePasswordReset(user.id)}
                       disabled={busyUserId === user.id}
-                      style={{ padding: "6px 12px" }}
+                      className="drive-button-muted"
                     >
                       Set password
                     </button>
@@ -278,7 +308,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
                       type="button"
                       onClick={() => handleDeleteUser(user.id)}
                       disabled={busyUserId === user.id || user.id === currentUserId}
-                      style={{ padding: "6px 12px", color: "#b42318" }}
+                      className="drive-button-danger"
                     >
                       Remove
                     </button>

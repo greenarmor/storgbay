@@ -55,14 +55,14 @@ export function ChangePasswordForm() {
         display: "grid",
         gap: 12,
         maxWidth: 420,
-        background: "#fff",
-        border: "1px solid #eee",
-        borderRadius: 12,
+        background: "var(--drive-surface)",
+        border: "1px solid var(--drive-border)",
+        borderRadius: "var(--drive-radius-md)",
         padding: 16,
       }}
     >
       <h3 style={{ margin: 0 }}>Change password</h3>
-      <p style={{ margin: 0, color: "#555", fontSize: 14 }}>
+      <p style={{ margin: 0, color: "var(--drive-muted)", fontSize: 14 }}>
         Update your password. This only affects your own account.
       </p>
       <label style={{ display: "grid", gap: 4 }}>
@@ -99,7 +99,13 @@ export function ChangePasswordForm() {
         {submitting ? "Saving…" : "Save password"}
       </button>
       {(feedback || error) && (
-        <p style={{ margin: 0, color: error ? "#b42318" : "#05603a", fontSize: 14 }}>
+        <p
+          style={{
+            margin: 0,
+            color: error ? "var(--drive-error-text)" : "var(--drive-success-text)",
+            fontSize: 14,
+          }}
+        >
           {error ?? feedback}
         </p>
       )}
