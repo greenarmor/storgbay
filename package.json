@@ -1,6 +1,9 @@
 {
-  "name": "fileshare-gallery",
-  "private": true,
+  "name": "storgbay",
+  "version": "1.0.0",
+  "private": false,
+  "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
