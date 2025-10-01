@@ -1,7 +1,7 @@
 {
   "name": "@greenarmor/storgbay",
   "version": "1.0.0",
- "publishConfig": { "access": "restricted" }
+ "publishConfig": { "access": "restricted" },
   "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
   "license": "UNLICENSED",
   "scripts": {
