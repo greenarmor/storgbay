@@ -23,6 +23,7 @@ export function DriveSidebar({ navItems, sessionUser }: DriveSidebarProps) {
   const shouldHideSidebar = !sessionUser && isGalleryRoute;
   const shouldShowCta = Boolean(sessionUser) || isHomeRoute;
   const [isGalleryManagerOpen, setGalleryManagerOpen] = useState(false);
+  const filteredNavItems = navItems.filter((item) => item.href !== "/");
 
   if (shouldHideSidebar) {
     return null;
@@ -32,7 +33,7 @@ export function DriveSidebar({ navItems, sessionUser }: DriveSidebarProps) {
     <>
       <aside className="drive-sidebar" aria-label="Primary navigation">
         <nav className="drive-nav">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const isMyDrive = item.href === "/dashboard";
             return (
               <div key={item.href} className={isMyDrive ? "drive-nav-group" : undefined}>
