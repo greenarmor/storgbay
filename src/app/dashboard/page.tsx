@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { FileManager } from "@/components/FileManager";
 import { CreateGalleryForm } from "@/components/CreateGalleryForm";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { auth } from "@/lib/auth";
@@ -99,12 +98,17 @@ export default async function Dashboard() {
 
       <section style={{ display: "grid", gap: 16 }}>
         <div>
-          <h2 style={{ marginBottom: 4 }}>My files</h2>
+          <h2 style={{ marginBottom: 4 }}>Gallery Manager</h2>
           <p style={{ margin: 0, color: "var(--drive-muted)" }}>
-            Browse your uploads, create new galleries, and add items to existing collections without leaving the dashboard.
+            Access the full media library and manage file selections from the Gallery Manager submenu inside My Drive.
           </p>
         </div>
-        <FileManager />
+        <div className="drive-panel">
+          <p style={{ margin: 0, color: "var(--drive-muted)" }}>
+            Open the My Drive navigation item to launch the Gallery Manager without leaving your current page.
+            From there you can upload, organize, and build new galleries in a focused workspace.
+          </p>
+        </div>
       </section>
 
       <section style={{ display: "grid", gap: 16 }}>

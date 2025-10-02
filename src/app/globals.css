@@ -334,6 +334,11 @@ button:focus-visible,
   gap: 0.4rem;
 }
 
+.drive-nav-group {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .drive-nav-link {
   padding: 0.75rem 1rem;
   border-radius: var(--drive-radius-md);
@@ -350,6 +355,37 @@ button:focus-visible,
   background: var(--drive-accent-soft);
   color: var(--drive-accent);
   transform: translateX(4px);
+}
+
+.drive-nav-sublinks {
+  display: grid;
+  gap: 0.3rem;
+  margin-left: 1.5rem;
+  padding-left: 0.8rem;
+  border-left: 1px solid var(--drive-border);
+}
+
+.drive-nav-sublink {
+  background: transparent;
+  border: none;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--drive-radius-md);
+  font-weight: 600;
+  color: var(--drive-muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.drive-nav-sublink:hover,
+.drive-nav-sublink:focus-visible {
+  background: var(--drive-accent-soft);
+  color: var(--drive-accent);
+  transform: translateX(4px);
+  outline: none;
 }
 
 .drive-sidebar-footer {
@@ -1105,4 +1141,70 @@ body.landing-active .drive-main {
 
 .landing-highlight {
   display: inline;
+}
+.gallery-manager-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  z-index: 60;
+}
+
+.gallery-manager-window {
+  width: min(1100px, calc(100vw - 3rem));
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--drive-surface);
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: 0 32px 60px rgba(15, 23, 42, 0.28);
+  padding: 1.5rem;
+}
+
+.gallery-manager-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gallery-manager-header h2 {
+  margin: 0 0 0.25rem;
+}
+
+.gallery-manager-header p {
+  margin: 0;
+  color: var(--drive-muted);
+}
+
+.gallery-manager-close {
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--drive-muted);
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.gallery-manager-close:hover,
+.gallery-manager-close:focus-visible {
+  color: var(--drive-accent);
+  background: var(--drive-accent-soft);
+  outline: none;
+}
+
+.gallery-manager-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
