@@ -307,6 +307,39 @@ button:focus-visible,
   pointer-events: none;
 }
 
+.drive-pill-button {
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--drive-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-image: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.drive-pill-button:hover,
+.drive-pill-button:focus-visible {
+  background: var(--drive-accent-soft);
+  color: var(--drive-accent);
+  border-color: var(--drive-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  outline: none;
+}
+
+.drive-pill-button:active {
+  transform: translateY(1px);
+}
+
 .drive-content {
   flex: 1;
   display: flex;
@@ -1207,4 +1240,98 @@ body.landing-active .drive-main {
   flex: 1;
   overflow-y: auto;
   padding-right: 0.25rem;
+}
+
+.account-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  z-index: 70;
+}
+
+.account-settings-window {
+  width: min(520px, calc(100vw - 3rem));
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--drive-surface);
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: 0 24px 45px rgba(15, 23, 42, 0.28);
+  padding: 1.75rem;
+}
+
+.account-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.account-settings-header h2 {
+  margin: 0 0 0.35rem;
+}
+
+.account-settings-email {
+  margin: 0 0 0.45rem;
+  color: var(--drive-muted);
+  font-size: 0.85rem;
+}
+
+.account-settings-description {
+  margin: 0;
+  color: var(--drive-muted);
+}
+
+.account-settings-close {
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--drive-muted);
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.account-settings-close:hover,
+.account-settings-close:focus-visible {
+  color: var(--drive-accent);
+  background: var(--drive-accent-soft);
+  outline: none;
+}
+
+.account-settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.account-settings-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-settings-section h3 {
+  margin: 0 0 0.35rem;
+}
+
+.account-settings-section-description {
+  margin: 0;
+  color: var(--drive-muted);
+}
+
+@media (max-width: 640px) {
+  .account-settings-window {
+    width: calc(100vw - 2rem);
+    padding: 1.5rem;
+  }
 }

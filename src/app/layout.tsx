@@ -8,6 +8,7 @@ import { HeaderSearch } from "@/components/HeaderSearch";
 import { DriveSidebar } from "@/components/DriveSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { auth, AppSession } from "@/lib/auth";
+import { AccountSettingsButton } from "@/components/AccountSettingsButton";
 
 const publicNav = [{ href: "/", label: "Home" }];
 const authenticatedNav = [
@@ -39,9 +40,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <div className="drive-header-actions">
             <ThemeToggle />
             <div className="drive-header-pills" role="list">
-              <span role="listitem" className="drive-pill muted">
-                {session?.user?.email ?? "Guest"}
-              </span>
+              {session?.user ? (
+                <AccountSettingsButton
+                  email={session.user.email ?? session.user.name ?? "Account"}
+                />
+              ) : (
+                <span role="listitem" className="drive-pill muted">
+                  Guest
+                </span>
+              )}
               {session?.user ? (
                 <a role="listitem" className="drive-pill" href="/api/auth/signout">
                   Sign out
