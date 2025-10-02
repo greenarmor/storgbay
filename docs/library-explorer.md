@@ -4,7 +4,8 @@ The consolidated media explorer powers the "My Files" modal and surfaces both up
 
 ## `/api/library`
 
-Returns an array of discriminated union objects that describe either a file or a gallery the signed-in user can access.
+Returns an array of discriminated union objects that describe either a file or a gallery the signed-in user can access. The
+collection is sorted by `createdAt` in descending order so folders and files appear in a single chronological feed.
 
 ```jsonc
 [

@@ -86,5 +86,24 @@ export async function GET() {
     createdAt: gallery.createdAt.toISOString(),
   }));
 
-  return Response.json([...fileItems, ...galleryItems]);
+  const libraryItems: LibraryItemPayload[] = [...fileItems, ...galleryItems].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+
+    if (Number.isNaN(timeA) && Number.isNaN(timeB)) {
+      return 0;
+    }
+
+    if (Number.isNaN(timeA)) {
+      return 1;
+    }
+
+    if (Number.isNaN(timeB)) {
+      return -1;
+    }
+
+    return timeB - timeA;
+  });
+
+  return Response.json(libraryItems);
 }
