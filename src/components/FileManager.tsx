@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { formatBytes, formatDate, isAnimatedImage, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
 
-type LibraryFile = {
+type LibraryFileItem = {
+  kind: "file";
   id: string;
   filename: string;
   mime: string | null;
@@ -14,14 +15,19 @@ type LibraryFile = {
   url: string;
 };
 
-type LibraryGallery = {
+type LibraryGalleryItem = {
+  kind: "gallery";
   id: string;
   title: string;
   visibility: "PUBLIC" | "PRIVATE";
   ownerId: string;
   ownerLabel: string;
   role: "OWNER" | "MANAGER";
+  itemCount: number;
+  createdAt: string;
 };
+
+type LibraryItem = LibraryFileItem | LibraryGalleryItem;
 
 type Filter = "all" | "images" | "videos" | "audio" | "documents" | "other";
 
@@ -34,7 +40,15 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-function matchesFilter(file: LibraryFile, filter: Filter): boolean {
+function isFileItem(item: LibraryItem): item is LibraryFileItem {
+  return item.kind === "file";
+}
+
+function isGalleryItem(item: LibraryItem): item is LibraryGalleryItem {
+  return item.kind === "gallery";
+}
+
+function matchesFilter(file: LibraryFileItem, filter: Filter): boolean {
   switch (filter) {
     case "images":
       return isImage(file.mime);
@@ -52,8 +66,7 @@ function matchesFilter(file: LibraryFile, filter: Filter): boolean {
 }
 
 export function FileManager({ initialSearch = "" }: { initialSearch?: string } = {}) {
-  const [files, setFiles] = useState<LibraryFile[]>([]);
-  const [galleries, setGalleries] = useState<LibraryGallery[]>([]);
+  const [items, setItems] = useState<LibraryItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedGalleryId, setSelectedGalleryId] = useState<string>("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -63,23 +76,62 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const ownedGalleries = useMemo(
-    () => galleries.filter((gallery) => gallery.role === "OWNER"),
-    [galleries]
-  );
-  const sharedGalleries = useMemo(
-    () => galleries.filter((gallery) => gallery.role === "MANAGER"),
-    [galleries]
+  const fileItems = useMemo(() => items.filter(isFileItem), [items]);
+  const galleryItems = useMemo(() => items.filter(isGalleryItem), [items]);
+
+  useEffect(() => {
+    if (galleryItems.length > 0) {
+      setSelectedGalleryId((current) => current || galleryItems[0]?.id || "");
+    } else {
+      setSelectedGalleryId("");
+    }
+  }, [galleryItems]);
+
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return items.filter((item) => {
+      if (query) {
+        if (isFileItem(item)) {
+          if (!item.filename.toLowerCase().includes(query)) {
+            return false;
+          }
+        } else if (
+          !item.title.toLowerCase().includes(query) &&
+          !item.ownerLabel.toLowerCase().includes(query)
+        ) {
+          return false;
+        }
+      }
+
+      if (isFileItem(item)) {
+        return matchesFilter(item, filter);
+      }
+
+      // Folders are only shown in the "all" view to keep type filters scoped to files.
+      return filter === "all";
+    });
+  }, [items, filter, search]);
+
+  const filteredFileItems = useMemo(
+    () => filteredItems.filter(isFileItem),
+    [filteredItems]
   );
 
-  const filteredFiles = useMemo(() => {
-    return files.filter((file) => {
-      if (search && !file.filename.toLowerCase().includes(search.toLowerCase())) {
-        return false;
-      }
-      return matchesFilter(file, filter);
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const availableIds = new Set(fileItems.map((file) => file.id));
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (availableIds.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
-  }, [files, filter, search]);
+  }, [fileItems]);
 
   useEffect(() => {
     void refreshLibrary();
@@ -93,29 +145,13 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
     try {
       setLoading(true);
       setError(null);
-      const [filesRes, galleriesRes] = await Promise.all([
-        fetch("/api/files", { cache: "no-store" }),
-        fetch("/api/galleries?scope=mine", { cache: "no-store" }),
-      ]);
+      const res = await fetch("/api/library", { cache: "no-store" });
 
-      if (!filesRes.ok) {
-        throw new Error(`Failed to load files (${filesRes.status})`);
+      if (!res.ok) {
+        throw new Error(`Failed to load library (${res.status})`);
       }
-      const fileData: LibraryFile[] = await filesRes.json();
-      setFiles(fileData);
-
-      if (galleriesRes.ok) {
-        const galleryData: LibraryGallery[] = await galleriesRes.json();
-        setGalleries(galleryData);
-        if (galleryData.length > 0) {
-          setSelectedGalleryId((current) => current || galleryData[0]?.id || "");
-        } else {
-          setSelectedGalleryId("");
-        }
-      } else if (galleriesRes.status === 401) {
-        setGalleries([]);
-        setSelectedGalleryId("");
-      }
+      const data: LibraryItem[] = await res.json();
+      setItems(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load media library.";
       setError(message);
@@ -139,7 +175,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
   function toggleSelectAll() {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      const ids = filteredFiles.map((file) => file.id);
+      const ids = filteredFileItems.map((file) => file.id);
       const allSelected = ids.every((id) => next.has(id));
       if (allSelected) {
         ids.forEach((id) => next.delete(id));
@@ -255,9 +291,8 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
     }
   }
 
-  const hasFiles = filteredFiles.length > 0;
   const selectedCount = selectedIds.size;
-  const hasGalleryAccess = galleries.length > 0;
+  const hasAnyItems = items.length > 0;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -295,86 +330,16 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
       {error && <div className="drive-alert drive-alert--error">{error}</div>}
       {status && !error && <div className="drive-alert drive-alert--info">{status}</div>}
 
-      <div style={{ display: "grid", gap: 12 }}>
-        <strong>Folders you can manage</strong>
-        {!hasGalleryAccess ? (
-          <div
-            style={{
-              padding: 16,
-              border: "1px solid var(--drive-border)",
-              borderRadius: "var(--drive-radius-sm)",
-              background: "var(--drive-surface)",
-            }}
-          >
-            <p style={{ margin: 0, color: "var(--drive-muted)" }}>You don&apos;t have access to any folders yet.</p>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {ownedGalleries.length > 0 && (
-              <div style={{ display: "grid", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>Your folders</span>
-                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
-                  {ownedGalleries.map((gallery) => (
-                    <li
-                      key={gallery.id}
-                      style={{
-                        padding: 12,
-                        border: "1px solid var(--drive-border)",
-                        borderRadius: "var(--drive-radius-sm)",
-                        background: "var(--drive-surface)",
-                      }}
-                    >
-                      <div style={{ display: "grid", gap: 4 }}>
-                        <Link href={`/gallery/${gallery.id}`} style={{ fontWeight: 600 }}>
-                          {gallery.title}
-                        </Link>
-                        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
-                          Visibility: {gallery.visibility}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {sharedGalleries.length > 0 && (
-              <div style={{ display: "grid", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>Shared with you</span>
-                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
-                  {sharedGalleries.map((gallery) => (
-                    <li
-                      key={gallery.id}
-                      style={{
-                        padding: 12,
-                        border: "1px solid var(--drive-border)",
-                        borderRadius: "var(--drive-radius-sm)",
-                        background: "var(--drive-surface)",
-                      }}
-                    >
-                      <div style={{ display: "grid", gap: 4 }}>
-                        <Link href={`/gallery/${gallery.id}`} style={{ fontWeight: 600 }}>
-                          {gallery.title}
-                        </Link>
-                        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
-                          Owner: {gallery.ownerLabel}
-                        </span>
-                        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
-                          Visibility: {gallery.visibility}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <span>{selectedCount} selected</span>
-        <button onClick={toggleSelectAll} disabled={!hasFiles} className="drive-button-ghost">
-          {hasFiles && filteredFiles.every((file) => selectedIds.has(file.id)) ? "Unselect all" : "Select all"}
+        <button
+          onClick={toggleSelectAll}
+          disabled={filteredFileItems.length === 0}
+          className="drive-button-ghost"
+        >
+          {filteredFileItems.length > 0 && filteredFileItems.every((file) => selectedIds.has(file.id))
+            ? "Unselect all"
+            : "Select all"}
         </button>
         <button onClick={clearSelection} disabled={selectedCount === 0} className="drive-button-ghost">
           Clear selection
@@ -407,7 +372,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
             onChange={(e) => setSelectedGalleryId(e.target.value)}
           >
             <option value="">Choose gallery…</option>
-            {galleries.map((g) => (
+            {galleryItems.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.title}
                 {g.visibility === "PRIVATE" ? " (Private)" : ""}
@@ -429,10 +394,11 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
         style={{
           display: "grid",
           gap: 16,
-          gridTemplateColumns: hasFiles ? "repeat(auto-fill, minmax(220px, 1fr))" : "1fr",
+          gridTemplateColumns:
+            filteredItems.length > 0 ? "repeat(auto-fill, minmax(220px, 1fr))" : "1fr",
         }}
       >
-        {loading && files.length === 0 ? (
+        {loading && items.length === 0 ? (
           <div
             style={{
               padding: 32,
@@ -442,9 +408,9 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
               background: "var(--drive-surface)",
             }}
           >
-            Loading files…
+            Loading items…
           </div>
-        ) : !hasFiles ? (
+        ) : filteredItems.length === 0 ? (
           <div
             style={{
               padding: 32,
@@ -454,86 +420,151 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
               background: "var(--drive-surface)",
             }}
           >
-            <p style={{ marginBottom: 12 }}>You have no uploads yet.</p>
-            <Link href="/upload" style={{ color: "var(--drive-accent)" }}>
-              Go to the upload page
-            </Link>
+            {hasAnyItems ? (
+              <p style={{ margin: 0 }}>No items match your filters.</p>
+            ) : (
+              <>
+                <p style={{ marginBottom: 12 }}>You have no uploads yet.</p>
+                <Link href="/upload" style={{ color: "var(--drive-accent)" }}>
+                  Go to the upload page
+                </Link>
+              </>
+            )}
           </div>
         ) : (
-          filteredFiles.map((file) => {
-            const isSelected = selectedIds.has(file.id);
+          filteredItems.map((item) => {
+            if (isFileItem(item)) {
+              const isSelected = selectedIds.has(item.id);
+              return (
+                <label
+                  key={item.id}
+                  style={{
+                    border: isSelected ? "2px solid var(--drive-accent)" : "1px solid var(--drive-border)",
+                    borderRadius: "var(--drive-radius-sm)",
+                    padding: 12,
+                    display: "grid",
+                    gap: 8,
+                    cursor: "pointer",
+                    boxShadow: isSelected ? `0 0 0 3px var(--drive-selection-ring)` : "0 1px 2px rgba(15,23,42,0.08)",
+                    background: "var(--drive-surface)",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelection(item.id)}
+                    style={{ justifySelf: "start" }}
+                  />
+                  <div style={{ width: "100%", borderRadius: 8, overflow: "hidden" }}>
+                    {isImage(item.mime) ? (
+                      <Image
+                        src={item.url}
+                        alt={item.filename}
+                        width={640}
+                        height={480}
+                        style={{ width: "100%", height: "auto" }}
+                        unoptimized={isAnimatedImage(item.mime, item.filename)}
+                      />
+                    ) : isVideo(item.mime) ? (
+                      <video src={item.url} controls style={{ width: "100%", borderRadius: 8 }} />
+                    ) : isAudio(item.mime) ? (
+                      <audio src={item.url} controls style={{ width: "100%" }} />
+                    ) : isPdf(item.mime) ? (
+                      <iframe
+                        src={item.url}
+                        style={{
+                          width: "100%",
+                          height: 200,
+                          border: "1px solid var(--drive-border)",
+                          borderRadius: "var(--drive-radius-sm)",
+                          background: "var(--drive-surface)",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: "grid",
+                          placeItems: "center",
+                          background: "var(--drive-muted-surface)",
+                          border: "1px dashed var(--drive-border)",
+                          borderRadius: "var(--drive-radius-sm)",
+                          height: 180,
+                        }}
+                      >
+                        <span>{item.mime || "file"}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "grid", gap: 4 }}>
+                    <strong style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.filename}
+                    </strong>
+                    <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{item.mime}</span>
+                    <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatBytes(item.bytes)}</span>
+                    <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatDate(item.createdAt)}</span>
+                    <a href={item.url} download style={{ fontSize: 12, color: "var(--drive-accent)" }}>
+                      Download
+                    </a>
+                  </div>
+                </label>
+              );
+            }
+
             return (
-              <label
-                key={file.id}
+              <div
+                key={item.id}
                 style={{
-                  border: isSelected ? "2px solid var(--drive-accent)" : "1px solid var(--drive-border)",
+                  border: "1px solid var(--drive-border)",
                   borderRadius: "var(--drive-radius-sm)",
                   padding: 12,
                   display: "grid",
-                  gap: 8,
-                  cursor: "pointer",
-                  boxShadow: isSelected ? `0 0 0 3px var(--drive-selection-ring)` : "0 1px 2px rgba(15,23,42,0.08)",
+                  gap: 12,
                   background: "var(--drive-surface)",
+                  boxShadow: "0 1px 2px rgba(15,23,42,0.08)",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleSelection(file.id)}
-                  style={{ justifySelf: "start" }}
-                />
-                <div style={{ width: "100%", borderRadius: 8, overflow: "hidden" }}>
-                  {isImage(file.mime) ? (
-                    <Image
-                      src={file.url}
-                      alt={file.filename}
-                      width={640}
-                      height={480}
-                      style={{ width: "100%", height: "auto" }}
-                      unoptimized={isAnimatedImage(file.mime, file.filename)}
-                    />
-                  ) : isVideo(file.mime) ? (
-                    <video src={file.url} controls style={{ width: "100%", borderRadius: 8 }} />
-                  ) : isAudio(file.mime) ? (
-                    <audio src={file.url} controls style={{ width: "100%" }} />
-                  ) : isPdf(file.mime) ? (
-                    <iframe
-                      src={file.url}
-                      style={{
-                        width: "100%",
-                        height: 200,
-                        border: "1px solid var(--drive-border)",
-                        borderRadius: "var(--drive-radius-sm)",
-                        background: "var(--drive-surface)",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        display: "grid",
-                        placeItems: "center",
-                        background: "var(--drive-muted-surface)",
-                        border: "1px dashed var(--drive-border)",
-                        borderRadius: "var(--drive-radius-sm)",
-                        height: 180,
-                      }}
-                    >
-                      <span>{file.mime || "file"}</span>
-                    </div>
-                  )}
+                <div
+                  style={{
+                    display: "grid",
+                    placeItems: "center",
+                    background: "var(--drive-muted-surface)",
+                    borderRadius: 8,
+                    height: 180,
+                    border: "1px dashed var(--drive-border)",
+                    color: "var(--drive-muted)",
+                    fontSize: 28,
+                  }}
+                >
+                  📁
                 </div>
                 <div style={{ display: "grid", gap: 4 }}>
-                  <strong style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {file.filename}
+                  <strong style={{ fontSize: 14, display: "flex", gap: 8, alignItems: "center" }}>
+                    {item.title}
+                    <span
+                      style={{
+                        fontSize: 11,
+                        textTransform: "uppercase",
+                        color: "var(--drive-muted)",
+                        border: "1px solid var(--drive-border)",
+                        borderRadius: 999,
+                        padding: "2px 6px",
+                      }}
+                    >
+                      {item.visibility === "PRIVATE" ? "Private" : "Public"}
+                    </span>
                   </strong>
-                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{file.mime}</span>
-                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatBytes(file.bytes)}</span>
-                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatDate(file.createdAt)}</span>
-                  <a href={file.url} download style={{ fontSize: 12, color: "var(--drive-accent)" }}>
-                    Download
-                  </a>
+                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+                    {item.role === "OWNER" ? "Owned by you" : `Shared by ${item.ownerLabel}`}
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+                    {item.itemCount} item{item.itemCount === 1 ? "" : "s"}
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>Created {formatDate(item.createdAt)}</span>
+                  <Link href={`/gallery/${item.id}`} style={{ fontSize: 12, color: "var(--drive-accent)" }}>
+                    Open folder
+                  </Link>
                 </div>
-              </label>
+              </div>
             );
           })
         )}
