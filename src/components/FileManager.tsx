@@ -18,6 +18,9 @@ type LibraryGallery = {
   id: string;
   title: string;
   visibility: "PUBLIC" | "PRIVATE";
+  ownerId: string;
+  ownerLabel: string;
+  role: "OWNER" | "MANAGER";
 };
 
 type Filter = "all" | "images" | "videos" | "audio" | "documents" | "other";
@@ -60,6 +63,15 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const ownedGalleries = useMemo(
+    () => galleries.filter((gallery) => gallery.role === "OWNER"),
+    [galleries]
+  );
+  const sharedGalleries = useMemo(
+    () => galleries.filter((gallery) => gallery.role === "MANAGER"),
+    [galleries]
+  );
+
   const filteredFiles = useMemo(() => {
     return files.filter((file) => {
       if (search && !file.filename.toLowerCase().includes(search.toLowerCase())) {
@@ -96,10 +108,13 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
         const galleryData: LibraryGallery[] = await galleriesRes.json();
         setGalleries(galleryData);
         if (galleryData.length > 0) {
-          setSelectedGalleryId((current) => current || galleryData[0].id);
+          setSelectedGalleryId((current) => current || galleryData[0]?.id || "");
+        } else {
+          setSelectedGalleryId("");
         }
       } else if (galleriesRes.status === 401) {
         setGalleries([]);
+        setSelectedGalleryId("");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load media library.";
@@ -242,6 +257,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
 
   const hasFiles = filteredFiles.length > 0;
   const selectedCount = selectedIds.size;
+  const hasGalleryAccess = galleries.length > 0;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -278,6 +294,82 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
 
       {error && <div className="drive-alert drive-alert--error">{error}</div>}
       {status && !error && <div className="drive-alert drive-alert--info">{status}</div>}
+
+      <div style={{ display: "grid", gap: 12 }}>
+        <strong>Folders you can manage</strong>
+        {!hasGalleryAccess ? (
+          <div
+            style={{
+              padding: 16,
+              border: "1px solid var(--drive-border)",
+              borderRadius: "var(--drive-radius-sm)",
+              background: "var(--drive-surface)",
+            }}
+          >
+            <p style={{ margin: 0, color: "var(--drive-muted)" }}>You don&apos;t have access to any folders yet.</p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {ownedGalleries.length > 0 && (
+              <div style={{ display: "grid", gap: 8 }}>
+                <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>Your folders</span>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
+                  {ownedGalleries.map((gallery) => (
+                    <li
+                      key={gallery.id}
+                      style={{
+                        padding: 12,
+                        border: "1px solid var(--drive-border)",
+                        borderRadius: "var(--drive-radius-sm)",
+                        background: "var(--drive-surface)",
+                      }}
+                    >
+                      <div style={{ display: "grid", gap: 4 }}>
+                        <Link href={`/gallery/${gallery.id}`} style={{ fontWeight: 600 }}>
+                          {gallery.title}
+                        </Link>
+                        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+                          Visibility: {gallery.visibility}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {sharedGalleries.length > 0 && (
+              <div style={{ display: "grid", gap: 8 }}>
+                <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>Shared with you</span>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8 }}>
+                  {sharedGalleries.map((gallery) => (
+                    <li
+                      key={gallery.id}
+                      style={{
+                        padding: 12,
+                        border: "1px solid var(--drive-border)",
+                        borderRadius: "var(--drive-radius-sm)",
+                        background: "var(--drive-surface)",
+                      }}
+                    >
+                      <div style={{ display: "grid", gap: 4 }}>
+                        <Link href={`/gallery/${gallery.id}`} style={{ fontWeight: 600 }}>
+                          {gallery.title}
+                        </Link>
+                        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+                          Owner: {gallery.ownerLabel}
+                        </span>
+                        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+                          Visibility: {gallery.visibility}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <span>{selectedCount} selected</span>
@@ -317,7 +409,9 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
             <option value="">Choose gallery…</option>
             {galleries.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.title} {g.visibility === "PRIVATE" ? "(Private)" : ""}
+                {g.title}
+                {g.visibility === "PRIVATE" ? " (Private)" : ""}
+                {g.role === "MANAGER" ? " (Shared)" : ""}
               </option>
             ))}
           </select>

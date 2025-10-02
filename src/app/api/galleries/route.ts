@@ -42,9 +42,25 @@ export async function GET(req: Request) {
         ],
       },
       orderBy: { createdAt: "desc" },
-      include: { items: { include: { file: true } } },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
-    return Response.json(galleries);
+    const payload = galleries.map((gallery) => ({
+      id: gallery.id,
+      title: gallery.title,
+      visibility: gallery.visibility,
+      ownerId: gallery.ownerId,
+      ownerLabel: gallery.owner?.name ?? gallery.owner?.email ?? "Unknown owner",
+      role: gallery.ownerId === session.user.id ? "OWNER" : "MANAGER",
+    }));
+    return Response.json(payload);
   }
 
   const galleries = await prisma.gallery.findMany({
