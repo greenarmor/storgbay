@@ -29,15 +29,23 @@ type LibraryGalleryItem = {
 
 type LibraryItem = LibraryFileItem | LibraryGalleryItem;
 
-type Filter = "all" | "images" | "videos" | "audio" | "documents" | "other";
+type Filter =
+  | "all"
+  | "images"
+  | "videos"
+  | "audio"
+  | "documents"
+  | "other"
+  | "galleries";
 
 const FILTERS: { value: Filter; label: string }[] = [
-  { value: "all", label: "All files" },
+  { value: "all", label: "All items" },
   { value: "images", label: "Images" },
   { value: "videos", label: "Videos" },
   { value: "audio", label: "Audio" },
   { value: "documents", label: "PDFs" },
   { value: "other", label: "Other" },
+  { value: "galleries", label: "Folders" },
 ];
 
 function isFileItem(item: LibraryItem): item is LibraryFileItem {
@@ -104,10 +112,14 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
       }
 
       if (isFileItem(item)) {
-        return matchesFilter(item, filter);
+        return filter === "galleries" ? false : matchesFilter(item, filter);
       }
 
-      // Folders are only shown in the "all" view to keep type filters scoped to files.
+      if (filter === "galleries") {
+        return true;
+      }
+
+      // Folders are shown in the "all" view to keep type filters scoped to files.
       return filter === "all";
     });
   }, [items, filter, search]);
