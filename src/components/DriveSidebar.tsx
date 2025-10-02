@@ -39,19 +39,7 @@ export function DriveSidebar({ navItems, sessionUser }: DriveSidebarProps) {
                 <Link href={item.href} className="drive-nav-link">
                   {item.label}
                 </Link>
-                {isMyDrive && (
-                  <div className="drive-nav-sublinks">
-                    <button
-                      type="button"
-                      className="drive-nav-sublink"
-                      onClick={() => setGalleryManagerOpen(true)}
-                      aria-haspopup="dialog"
-                      aria-expanded={isGalleryManagerOpen}
-                    >
-                      My files
-                    </button>
-                  </div>
-                )}
+
               </div>
             );
           })}
