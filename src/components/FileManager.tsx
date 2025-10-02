@@ -307,7 +307,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
             boxShadow: "none",
           }}
         >
-          Create gallery from selection
+          Create folder from selection
         </button>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <select
@@ -326,7 +326,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
             disabled={selectedCount === 0 || busy || !selectedGalleryId}
             className="drive-button-muted"
           >
-            Add to gallery
+            Add to folder
           </button>
         </div>
       </div>

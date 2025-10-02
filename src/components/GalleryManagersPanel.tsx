@@ -111,7 +111,7 @@ export function GalleryManagersPanel({ galleryId, initialManagers, canEdit, owne
   return (
     <section className="drive-panel">
       <header className="drive-panel-header">
-        <h2 style={{ margin: 0 }}>Gallery managers</h2>
+        <h2 style={{ margin: 0 }}>Share to:</h2>
         <p className="drive-panel-description">
           The owner ({ownerLabel}) can manage this gallery. Add uploaders or admins to help curate it.
         </p>

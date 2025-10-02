@@ -46,12 +46,12 @@ export function GalleryManagerModal({ open, onClose }: GalleryManagerModalProps)
         className="gallery-manager-window"
         role="dialog"
         aria-modal="true"
-        aria-label="Gallery Manager"
+        aria-label="File Manager"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="gallery-manager-header">
           <div>
-            <h2>Gallery Manager</h2>
+            <h2>My files</h2>
             <p>Organize your files and build new galleries without leaving your current view.</p>
           </div>
           <button type="button" className="gallery-manager-close" onClick={onClose} aria-label="Close Gallery Manager">

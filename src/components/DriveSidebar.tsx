@@ -48,7 +48,7 @@ export function DriveSidebar({ navItems, sessionUser }: DriveSidebarProps) {
                       aria-haspopup="dialog"
                       aria-expanded={isGalleryManagerOpen}
                     >
-                      Gallery Manager
+                      My files
                     </button>
                   </div>
                 )}

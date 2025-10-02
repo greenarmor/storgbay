@@ -37,16 +37,16 @@ export default async function Dashboard() {
     <div style={{ display: "grid", gap: 32 }}>
       <section style={{ display: "grid", gap: 16 }}>
         <div>
-          <h2 style={{ marginBottom: 4 }}>Galleries I manage</h2>
+          <h2 style={{ marginBottom: 4 }}>Folders</h2>
           <p style={{ margin: 0, color: "var(--drive-muted)" }}>
             Create curated collections, control their visibility, and collaborate with other uploaders.
           </p>
         </div>
         <div className="drive-panel">
           <div className="drive-panel-header">
-            <h3 style={{ margin: 0 }}>Create a new gallery</h3>
+            <h3 style={{ margin: 0 }}>Create a new folder</h3>
             <p className="drive-panel-description">
-              Name your gallery and choose whether it should be visible to the whole workspace or remain private.
+              Name your folder and choose whether it should be visible to the whole workspace or remain private.
             </p>
           </div>
           <CreateGalleryForm />
@@ -94,21 +94,6 @@ export default async function Dashboard() {
             })
           )}
         </ul>
-      </section>
-
-      <section style={{ display: "grid", gap: 16 }}>
-        <div>
-          <h2 style={{ marginBottom: 4 }}>Gallery Manager</h2>
-          <p style={{ margin: 0, color: "var(--drive-muted)" }}>
-            Access the full media library and manage file selections from the Gallery Manager submenu inside My Drive.
-          </p>
-        </div>
-        <div className="drive-panel">
-          <p style={{ margin: 0, color: "var(--drive-muted)" }}>
-            Open the My Drive navigation item to launch the Gallery Manager without leaving your current page.
-            From there you can upload, organize, and build new galleries in a focused workspace.
-          </p>
-        </div>
       </section>
 
       <section style={{ display: "grid", gap: 16 }}>
