@@ -56,12 +56,23 @@ export function LoginForm() {
         return;
       }
 
-      if (result?.url) {
-        router.replace(result.url);
-        return;
-      }
+      const targetUrl = (() => {
+        if (result?.url) {
+          try {
+            const parsed = new URL(result.url, window.location.origin);
+            if (parsed.origin === window.location.origin) {
+              return `${parsed.pathname}${parsed.search}${parsed.hash}` || "/dashboard";
+            }
+          } catch (error) {
+            console.warn("Failed to parse sign-in redirect URL", error);
+          }
+          return result.url;
+        }
+        return callbackUrl;
+      })();
 
-      router.replace(callbackUrl);
+      router.replace(targetUrl ?? "/dashboard");
+      router.refresh();
     } catch (err) {
       console.error(err);
       setError("Something went wrong while signing you in. Please try again.");
