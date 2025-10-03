@@ -819,6 +819,10 @@ body.landing-active .drive-content {
   padding: 0;
 }
 
+body.landing-active .drive-sidebar {
+  display: none;
+}
+
 body.landing-active .drive-main {
   background: transparent;
   border: none;
