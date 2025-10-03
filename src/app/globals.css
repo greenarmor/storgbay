@@ -340,6 +340,58 @@ button:focus-visible,
   transform: translateY(1px);
 }
 
+.drive-pill-button--dropdown {
+  position: relative;
+  padding-right: 2.1rem;
+}
+
+.drive-pill-button-icon {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.drive-pill-dropdown {
+  position: relative;
+}
+
+.drive-pill-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 180px;
+  padding: 0.5rem 0.25rem;
+  background: var(--drive-surface);
+  border: 1px solid var(--drive-border);
+  border-radius: var(--drive-radius-lg);
+  box-shadow: var(--drive-shadow);
+  display: grid;
+  gap: 0.25rem;
+  z-index: 20;
+}
+
+.drive-pill-menu-item {
+  display: flex;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--drive-text);
+  border-radius: var(--drive-radius-md);
+  border: none;
+  background: none;
+  text-decoration: none;
+  cursor: pointer;
+  justify-content: flex-start;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.drive-pill-menu-item:hover,
+.drive-pill-menu-item:focus-visible {
+  background: var(--drive-accent-soft);
+  color: var(--drive-accent);
+  outline: none;
+}
+
 .drive-content {
   flex: 1;
   display: flex;
