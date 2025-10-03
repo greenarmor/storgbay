@@ -13,10 +13,13 @@ const publicNav = [{ href: "/", label: "Home" }];
 const authenticatedNav = [
   ...publicNav,
   { href: "/dashboard", label: "My Drive" },
-  { href: "/upload", label: "Upload" },
 ];
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const session = (await auth()) as AppSession | null;
   const baseNav = session?.user ? authenticatedNav : publicNav;
   const navItems = baseNav;
@@ -38,8 +41,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <HeaderActions sessionUser={session?.user ?? null} />
         </header>
         <div className="drive-content">
-          {showSidebar && <DriveSidebar navItems={navItems} sessionUser={session?.user ?? null} />}
-          <main className={clsx("drive-main", { "drive-main--expanded": !showSidebar })}>{children}</main>
+          {showSidebar && (
+            <DriveSidebar
+              navItems={navItems}
+              sessionUser={session?.user ?? null}
+            />
+          )}
+          <main
+            className={clsx("drive-main", {
+              "drive-main--expanded": !showSidebar,
+            })}
+          >
+            {children}
+          </main>
         </div>
       </body>
     </html>
