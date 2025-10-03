@@ -243,6 +243,89 @@ button:focus-visible,
   gap: 0.75rem;
 }
 
+.drive-header-menu {
+  display: none;
+  position: relative;
+}
+
+.drive-header-menu-button {
+  background: var(--drive-surface);
+  color: var(--drive-text);
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--drive-border);
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.drive-header-menu-button:hover,
+.drive-header-menu-button:focus-visible {
+  background: var(--drive-accent-soft);
+  color: var(--drive-accent);
+  border-color: var(--drive-accent);
+  outline: none;
+}
+
+.drive-header-menu-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.drive-header-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  width: min(240px, 80vw);
+  background: var(--drive-surface);
+  border: 1px solid var(--drive-border);
+  border-radius: var(--drive-radius-lg);
+  box-shadow: var(--drive-shadow);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.4rem;
+  z-index: 30;
+}
+
+.drive-header-menu-info {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--drive-border);
+  margin-bottom: 0.3rem;
+}
+
+.drive-header-menu-email {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--drive-text);
+}
+
+.drive-header-menu-item {
+  display: flex;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--drive-radius-md);
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--drive-text);
+  text-decoration: none;
+  cursor: pointer;
+  justify-content: flex-start;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.drive-header-menu-item:hover,
+.drive-header-menu-item:focus-visible {
+  background: var(--drive-accent-soft);
+  color: var(--drive-accent);
+  outline: none;
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;
@@ -843,6 +926,68 @@ textarea:focus {
 
   .drive-main {
     padding: 1.4rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .drive-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.9rem 1.4rem;
+  }
+
+  .drive-header-left {
+    max-width: none;
+    gap: 1rem;
+  }
+
+  .drive-header-left .drive-search {
+    flex: 1 1 100%;
+  }
+
+  .drive-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .drive-header-pills {
+    display: none;
+  }
+
+  .drive-header-menu {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .drive-header {
+    padding: 0.85rem 1.1rem;
+  }
+
+  .drive-header-actions {
+    gap: 0.5rem;
+  }
+
+  .drive-content {
+    padding: 1.2rem 1.1rem 1.6rem;
+    gap: 1.1rem;
+  }
+
+  .drive-sidebar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1.2rem;
+  }
+
+  .drive-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .drive-main {
+    padding: 1.2rem;
   }
 }
 

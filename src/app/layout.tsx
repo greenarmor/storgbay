@@ -6,9 +6,8 @@ import Link from "next/link";
 import clsx from "clsx";
 import { HeaderSearch } from "@/components/HeaderSearch";
 import { DriveSidebar } from "@/components/DriveSidebar";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { auth, AppSession } from "@/lib/auth";
-import { AccountSettingsButton } from "@/components/AccountSettingsButton";
+import { HeaderActions } from "@/components/HeaderActions";
 
 const publicNav = [{ href: "/", label: "Home" }];
 const authenticatedNav = [
@@ -20,8 +19,7 @@ const authenticatedNav = [
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const session = (await auth()) as AppSession | null;
   const baseNav = session?.user ? authenticatedNav : publicNav;
-  const navItems =
-    session?.user?.role === "ADMIN" ? [...baseNav, { href: "/admin", label: "Admin Console" }] : baseNav;
+  const navItems = baseNav;
   const showSidebar = Boolean(session?.user);
 
   return (
@@ -37,30 +35,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             </Link>
             {session?.user && <HeaderSearch />}
           </div>
-          <div className="drive-header-actions">
-            <ThemeToggle />
-            <div className="drive-header-pills" role="list">
-              {session?.user ? (
-                <AccountSettingsButton
-                  email={session.user.email ?? session.user.name ?? "Account"}
-                  isAdmin={session.user.role === "ADMIN"}
-                />
-              ) : (
-                <span role="listitem" className="drive-pill muted">
-                  Guest
-                </span>
-              )}
-              {session?.user ? (
-                <a role="listitem" className="drive-pill" href="/api/auth/signout">
-                  Sign out
-                </a>
-              ) : (
-                <a role="listitem" className="drive-pill" href="/login">
-                  Sign in
-                </a>
-              )}
-            </div>
-          </div>
+          <HeaderActions sessionUser={session?.user ?? null} />
         </header>
         <div className="drive-content">
           {showSidebar && <DriveSidebar navItems={navItems} sessionUser={session?.user ?? null} />}
