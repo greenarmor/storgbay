@@ -2,18 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import type { AppSessionUser } from "@/lib/auth";
 import { AccountSettingsModal } from "@/components/AccountSettingsModal";
 
 type AccountSettingsButtonProps = {
-  email: string;
+  sessionUser: AppSessionUser;
 };
 
 export function AccountSettingsButton({
-  email,
+  sessionUser,
 }: AccountSettingsButtonProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const email = sessionUser.email ?? sessionUser.name ?? "Account";
+  const isAdmin = sessionUser.role === "ADMIN";
 
   const handleToggleMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
@@ -83,6 +86,16 @@ export function AccountSettingsButton({
             >
               My Drive
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="drive-pill-menu-item"
+                role="menuitem"
+                onClick={handleCloseMenu}
+              >
+                Admin Console
+              </Link>
+            )}
             <button
               type="button"
               className="drive-pill-menu-item"

@@ -69,7 +69,7 @@ export function HeaderActions({ sessionUser }: HeaderActionsProps) {
         <ThemeToggle />
         <div className="drive-header-pills" role="list">
           {sessionUser ? (
-            <AccountSettingsButton email={email} />
+            <AccountSettingsButton sessionUser={sessionUser} />
           ) : (
             <span role="listitem" className="drive-pill muted">
               Guest
