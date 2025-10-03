@@ -43,6 +43,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               {session?.user ? (
                 <AccountSettingsButton
                   email={session.user.email ?? session.user.name ?? "Account"}
+                  isAdmin={session.user.role === "ADMIN"}
                 />
               ) : (
                 <span role="listitem" className="drive-pill muted">

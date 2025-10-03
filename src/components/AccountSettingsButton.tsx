@@ -6,9 +6,13 @@ import { AccountSettingsModal } from "@/components/AccountSettingsModal";
 
 type AccountSettingsButtonProps = {
   email: string;
+  isAdmin?: boolean;
 };
 
-export function AccountSettingsButton({ email }: AccountSettingsButtonProps) {
+export function AccountSettingsButton({
+  email,
+  isAdmin = false,
+}: AccountSettingsButtonProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -81,6 +85,16 @@ export function AccountSettingsButton({ email }: AccountSettingsButtonProps) {
             >
               My Drive
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="drive-pill-menu-item"
+                role="menuitem"
+                onClick={handleCloseMenu}
+              >
+                Admin Console
+              </Link>
+            )}
             <button
               type="button"
               className="drive-pill-menu-item"
