@@ -346,7 +346,23 @@ function createDocxBlob(output: unknown) {
   }
 
   if (typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(output)) {
-    return new Blob([output as ArrayBufferView], { type: MIME_DOCX });
+    const view = output as ArrayBufferView & { buffer: ArrayBufferLike };
+    const { buffer, byteOffset, byteLength } = view;
+
+    if (buffer instanceof ArrayBuffer) {
+      const slice = buffer.slice(byteOffset, byteOffset + byteLength);
+      return new Blob([slice], { type: MIME_DOCX });
+    }
+
+    if (typeof SharedArrayBuffer !== "undefined" && buffer instanceof SharedArrayBuffer) {
+      const copy = new Uint8Array(byteLength);
+      copy.set(new Uint8Array(buffer, byteOffset, byteLength));
+      return new Blob([copy.buffer], { type: MIME_DOCX });
+    }
+
+    const copy = new Uint8Array(byteLength);
+    copy.set(new Uint8Array(buffer, byteOffset, byteLength));
+    return new Blob([copy.buffer], { type: MIME_DOCX });
   }
 
   throw new Error("Unsupported DOCX export format returned by converter.");
