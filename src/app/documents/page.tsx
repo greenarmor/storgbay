@@ -2,7 +2,7 @@ import DocumentsClient from "./DocumentsClient";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isDocx } from "@/lib/file-utils";
+import { isDocumentFile } from "@/lib/file-utils";
 import { presignGet } from "@/lib/s3";
 
 type PageProps = {
@@ -38,10 +38,10 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
         },
       });
 
-      if (!file || !isDocx(file.mime, file.filename)) {
+      if (!file || !isDocumentFile(file.mime, file.filename)) {
         initialStatus = {
           tone: "error",
-          text: "We couldn't find a compatible document to open.",
+          text: "We couldn't find a compatible document to view.",
         };
       } else {
         const userId = session.user.id;
@@ -64,10 +64,10 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
             const url = await presignGet(file.key);
             initialDocument = { id: file.id, filename: file.filename, url };
           } catch (error) {
-            console.error("Failed to prepare document for editing", error);
+            console.error("Failed to prepare document for viewing", error);
             initialStatus = {
               tone: "error",
-              text: "We couldn't prepare the document for editing. Please try again shortly.",
+              text: "We couldn't prepare the document for viewing. Please try again shortly.",
             };
           }
         }

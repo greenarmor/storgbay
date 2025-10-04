@@ -13,7 +13,7 @@ const publicNav = [{ href: "/", label: "Home" }];
 const authenticatedNav = [
   ...publicNav,
   { href: "/dashboard", label: "My Drive" },
-  { href: "/documents", label: "Document studio" },
+  { href: "/documents", label: "Document viewer" },
 ];
 
 export default async function RootLayout({

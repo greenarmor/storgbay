@@ -8,7 +8,7 @@ import {
   formatDate,
   isAnimatedImage,
   isAudio,
-  isDocx,
+  isDocumentFile,
   isImage,
   isPdf,
   isVideo,
@@ -74,7 +74,7 @@ function matchesFilter(file: LibraryFileItem, filter: Filter): boolean {
     case "audio":
       return isAudio(file.mime);
     case "documents":
-      return isPdf(file.mime) || isDocx(file.mime, file.filename);
+      return isPdf(file.mime) || isDocumentFile(file.mime, file.filename);
     case "other":
       return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime);
     default:
@@ -456,7 +456,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
           filteredItems.map((item) => {
             if (isFileItem(item)) {
               const isSelected = selectedIds.has(item.id);
-              const isDocumentFile = isDocx(item.mime, item.filename);
+              const isDocument = isDocumentFile(item.mime, item.filename);
               return (
                 <label
                   key={item.id}
@@ -525,13 +525,13 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
                     <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatBytes(item.bytes)}</span>
                     <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatDate(item.createdAt)}</span>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {isDocumentFile && (
+                      {isDocument && (
                         <Link
                           href={`/documents?file=${item.id}`}
                           style={{ fontSize: 12, color: "var(--drive-accent)" }}
                           onClick={(event) => event.stopPropagation()}
                         >
-                          Open in Document studio
+                          Open in Document viewer
                         </Link>
                       )}
                       <a

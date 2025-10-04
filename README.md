@@ -3,20 +3,19 @@
 A minimal, ready-to-run scaffold for a **file sharing + image gallery** web app.
 
 ## Features
-- Next.js (App Router) with simple pages: public feed, gallery, upload, dashboard, admin, document studio
+- Next.js (App Router) with simple pages: public feed, gallery, upload, dashboard, admin, document viewer
 - Auth.js (NextAuth v5) with **Credentials** and Prisma Adapter
 - Prisma (MySQL) schema for users/files/galleries/shares
 - MinIO (S3) integration with **presigned PUT** (upload) and **presigned GET** (for private galleries)
-- Built-in document studio for creating rich text docs, importing Word exports, and saving back to storage
+- Built-in document viewer for previewing Word documents stored in Storgbay
 - Public-by-default galleries (requires enabling anonymous read on the MinIO bucket)
 
-## Document studio
+## Document viewer
 
-- Open the dashboard and click **Open document studio** (or visit `/documents`).
-- Use the toolbar to format rich text, insert headings, lists, quotes, and links.
-- Import `.docx`, `.html`, or plain text exports directly. Drag files onto the editor or use the Import button.
-- To bring in a Google Doc, download it as **Microsoft Word (.docx)** from Google Docs and upload the exported file.
-- Save finished work straight to Storgbay storage as a Word document or download it locally for offline editing.
+- Open the dashboard and click **Open document viewer** (or visit `/documents`).
+- Select a stored `.docx` file or a Google Docs link to load it in the embedded preview.
+- Use the **Open original** button to launch the document in a dedicated tab if the embedded preview requires additional authentication.
+- Download a copy of the original file at any time for offline access or editing in your preferred word processor.
 
 ## Local Setup (no Docker)
 1. **MySQL**: create DB `fileshare` and user `app`/`apppass`; or update `DATABASE_URL`. If your MySQL user cannot create

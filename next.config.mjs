@@ -26,7 +26,6 @@ const nextConfig = {
       storagePattern,
     ],
   },
-  transpilePackages: ["file-saver", "html-to-docx"],
   turbopack: {
     resolveAlias: {
       encoding: resolveShim('src/lib/shims/encoding.ts'),

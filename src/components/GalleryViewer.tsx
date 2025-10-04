@@ -8,7 +8,7 @@ import {
   formatDate,
   isAnimatedImage,
   isAudio,
-  isDocx,
+  isDocumentFile,
   isImage,
   isPdf,
   isVideo,
@@ -50,7 +50,7 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
     case "audio":
       return isAudio(file.mime);
     case "documents":
-      return isPdf(file.mime) || isDocx(file.mime, file.filename);
+      return isPdf(file.mime) || isDocumentFile(file.mime, file.filename);
     case "other":
       return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime);
     default:
@@ -61,7 +61,7 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
 function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => void }) {
   const imageStyles = { width: "100%", height: "auto", borderRadius: 8, cursor: onClick ? "pointer" : "default" } as const;
 
-  if (isDocx(file.mime, file.filename)) {
+  if (isDocumentFile(file.mime, file.filename)) {
     return (
       <div
         style={{
@@ -79,7 +79,7 @@ function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => vo
         <span role="img" aria-hidden={true} style={{ fontSize: 32 }}>
           📄
         </span>
-        <span style={{ fontSize: 14, color: "#555", textAlign: "center" }}>Open in Document studio</span>
+        <span style={{ fontSize: 14, color: "#555", textAlign: "center" }}>Open in Document viewer</span>
       </div>
     );
   }
@@ -166,7 +166,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
 
   const firstViewableIndex = useMemo(
     () =>
-      filteredFiles.findIndex((file) => Boolean(file._url) && !isDocx(file.mime, file.filename)),
+      filteredFiles.findIndex((file) => Boolean(file._url) && !isDocumentFile(file.mime, file.filename)),
     [filteredFiles]
   );
   const hasViewableFiles = firstViewableIndex !== -1;
@@ -290,11 +290,11 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
           }}
         >
           {filteredFiles.map((file, index) => {
-            const isDocumentFile = isDocx(file.mime, file.filename);
-            const canPreview = Boolean(file._url) && !isDocumentFile;
+            const isDocument = isDocumentFile(file.mime, file.filename);
+            const canPreview = Boolean(file._url) && !isDocument;
 
             const handleOpen = () => {
-              if (isDocumentFile) {
+              if (isDocument) {
                 setIsPlaying(false);
                 setActiveIndex(null);
                 router.push(`/documents?file=${file.id}`);
@@ -331,17 +331,17 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                 <button
                   onClick={handleOpen}
-                  disabled={!canPreview && !isDocumentFile}
+                  disabled={!canPreview && !isDocument}
                   style={{
                     padding: "4px 10px",
                     borderRadius: 6,
                     border: "1px solid #1a73e8",
-                    background: canPreview || isDocumentFile ? "#1a73e8" : "#e0e0e0",
-                    color: canPreview || isDocumentFile ? "#fff" : "#777",
-                    cursor: canPreview || isDocumentFile ? "pointer" : "not-allowed",
+                    background: canPreview || isDocument ? "#1a73e8" : "#e0e0e0",
+                    color: canPreview || isDocument ? "#fff" : "#777",
+                    cursor: canPreview || isDocument ? "pointer" : "not-allowed",
                   }}
                 >
-                  {isDocumentFile ? "Open" : "View"}
+                  {isDocument ? "Open" : "View"}
                 </button>
                 {file._url ? (
                   <a href={file._url ?? undefined} download style={{ fontSize: 12, color: "#1a73e8" }}>

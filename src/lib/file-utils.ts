@@ -24,14 +24,17 @@ export function isPdf(mime?: string | null): boolean {
   return mime === "application/pdf";
 }
 
-export function isDocx(mime?: string | null, filename?: string | null): boolean {
+export function isDocumentFile(mime?: string | null, filename?: string | null): boolean {
   const normalizedMime = mime?.toLowerCase() ?? "";
-  if (normalizedMime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+  if (
+    normalizedMime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    normalizedMime === "application/vnd.google-apps.document"
+  ) {
     return true;
   }
 
   const normalizedFilename = filename?.toLowerCase() ?? "";
-  return normalizedFilename.endsWith(".docx");
+  return normalizedFilename.endsWith(".docx") || normalizedFilename.endsWith(".gdoc");
 }
 
 export function formatBytes(bytes: number): string {
