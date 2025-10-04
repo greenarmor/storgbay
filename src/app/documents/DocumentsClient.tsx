@@ -346,7 +346,7 @@ function createDocxBlob(output: unknown) {
   }
 
   if (typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(output)) {
-    return new Blob([(output as ArrayBufferView).buffer], { type: MIME_DOCX });
+    return new Blob([output as ArrayBufferView], { type: MIME_DOCX });
   }
 
   throw new Error("Unsupported DOCX export format returned by converter.");
