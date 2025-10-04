@@ -595,7 +595,16 @@ export default function DocumentsClient({
       return;
     }
 
-    const pagesNeeded = Math.max(1, Math.ceil(height / pageHeightPx));
+    let effectiveHeight = height;
+
+    if (typeof window !== "undefined") {
+      const styles = window.getComputedStyle(element);
+      const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
+      const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+      effectiveHeight = Math.max(0, height - paddingTop - paddingBottom);
+    }
+
+    const pagesNeeded = Math.max(1, Math.ceil(effectiveHeight / pageHeightPx));
     setPageCount((current) => (current === pagesNeeded ? current : pagesNeeded));
   }, [pageHeightPx]);
 
