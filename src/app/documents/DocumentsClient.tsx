@@ -608,6 +608,14 @@ export default function DocumentsClient({
     setPageCount((current) => (current === pagesNeeded ? current : pagesNeeded));
   }, [pageHeightPx]);
 
+  const schedulePageCountRecalculation = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    window.requestAnimationFrame(() => {
+      recalculatePageCount();
+    });
+  }, [recalculatePageCount]);
+
   useEffect(() => {
     recalculatePageCount();
   }, [recalculatePageCount, contentHtml, pageHeightPx]);
@@ -668,7 +676,9 @@ export default function DocumentsClient({
     if (editorRef.current.innerHTML !== sanitized) {
       editorRef.current.innerHTML = sanitized;
     }
-  }, [contentHtml]);
+
+    schedulePageCountRecalculation();
+  }, [contentHtml, schedulePageCountRecalculation]);
 
   const updateContentFromEditor = useCallback(() => {
     if (!editorRef.current) return;
@@ -678,7 +688,8 @@ export default function DocumentsClient({
 
   const handleInput = useCallback(() => {
     updateContentFromEditor();
-  }, [updateContentFromEditor]);
+    schedulePageCountRecalculation();
+  }, [schedulePageCountRecalculation, updateContentFromEditor]);
 
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLDivElement>) => {
@@ -689,8 +700,9 @@ export default function DocumentsClient({
       const sanitized = sanitizeHtml(html);
       document.execCommand("insertHTML", false, sanitized);
       updateContentFromEditor();
+      schedulePageCountRecalculation();
     },
-    [updateContentFromEditor],
+    [schedulePageCountRecalculation, updateContentFromEditor],
   );
 
   const handleImport = useCallback(async (file: File) => {
@@ -706,6 +718,7 @@ export default function DocumentsClient({
           setContentHtml(sanitized || DEFAULT_DOCUMENT_HTML);
           setDocumentTitle(file.name.replace(/\.docx$/i, ""));
           setStatus({ tone: "success", text: `Imported ${file.name}.` });
+          schedulePageCountRecalculation();
           break;
         }
         case "html": {
@@ -714,6 +727,7 @@ export default function DocumentsClient({
           setContentHtml(sanitized || DEFAULT_DOCUMENT_HTML);
           setDocumentTitle(file.name.replace(/\.html?$/i, ""));
           setStatus({ tone: "success", text: `Imported ${file.name}.` });
+          schedulePageCountRecalculation();
           break;
         }
         case "text": {
@@ -722,6 +736,7 @@ export default function DocumentsClient({
           setContentHtml(html || DEFAULT_DOCUMENT_HTML);
           setDocumentTitle(file.name.replace(/\.[^.]+$/, ""));
           setStatus({ tone: "success", text: `Converted ${file.name} to a rich text document.` });
+          schedulePageCountRecalculation();
           break;
         }
         case "gdoc": {
@@ -763,7 +778,7 @@ export default function DocumentsClient({
         text: error instanceof Error ? error.message : "Failed to import document.",
       });
     }
-  }, []);
+  }, [schedulePageCountRecalculation]);
 
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -835,8 +850,9 @@ export default function DocumentsClient({
       focusEditor();
       document.execCommand(command, false, value ?? "");
       updateContentFromEditor();
+      schedulePageCountRecalculation();
     },
-    [focusEditor, updateContentFromEditor],
+    [focusEditor, schedulePageCountRecalculation, updateContentFromEditor],
   );
 
   const handleNewDocument = useCallback(() => {
@@ -844,7 +860,8 @@ export default function DocumentsClient({
     setContentHtml(DEFAULT_DOCUMENT_HTML);
     setStatus({ tone: "info", text: "Started a fresh document." });
     focusEditor();
-  }, [focusEditor]);
+    schedulePageCountRecalculation();
+  }, [focusEditor, schedulePageCountRecalculation]);
 
   const createDocxArtifact = useCallback(async () => {
     const trimmedTitle = documentTitle?.trim();
@@ -959,7 +976,8 @@ export default function DocumentsClient({
     focusEditor();
     document.execCommand("createLink", false, url);
     updateContentFromEditor();
-  }, [focusEditor, updateContentFromEditor]);
+    schedulePageCountRecalculation();
+  }, [focusEditor, schedulePageCountRecalculation, updateContentFromEditor]);
 
   const handleClearFormatting = useCallback(() => {
     applyCommand("removeFormat");
@@ -1034,8 +1052,9 @@ export default function DocumentsClient({
       }
 
       updateContentFromEditor();
+      schedulePageCountRecalculation();
     },
-    [focusEditor, updateContentFromEditor],
+    [focusEditor, schedulePageCountRecalculation, updateContentFromEditor],
   );
 
   return (
