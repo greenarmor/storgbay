@@ -41,6 +41,40 @@ const MIN_PAGE_SCALE = 0.5;
 const MIME_DOCX =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+const SUPPORTED_DOCX_IMAGE_TYPES = new Set([
+  "image/apng",
+  "image/avif",
+  "image/bmp",
+  "image/gif",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/svg+xml",
+  "image/tiff",
+  "image/webp",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+]);
+
+const normalizeMime = (value: string) => value.trim().toLowerCase();
+
+const isSupportedDocxImageMime = (mime: string) => {
+  if (!mime) return false;
+  const normalized = normalizeMime(mime);
+
+  if (SUPPORTED_DOCX_IMAGE_TYPES.has(normalized)) {
+    return true;
+  }
+
+  if (normalized.startsWith("image/")) {
+    // Some browsers report vendor-specific subtypes (e.g. image/pjpeg).
+    const simplified = normalized.replace(/^image\/(x-)?/, "image/");
+    return SUPPORTED_DOCX_IMAGE_TYPES.has(simplified);
+  }
+
+  return false;
+};
+
 const mmToPx = (mm: number) => (mm / MM_PER_INCH) * SCREEN_DPI;
 
 const allowedTags = new Set([
@@ -393,7 +427,7 @@ async function inlineBlobImages(html: string) {
         }
 
         const blob = await response.blob();
-        if (!blob.type || !blob.type.startsWith("image/")) {
+        if (!blob.type || !isSupportedDocxImageMime(blob.type)) {
           img.remove();
           return;
         }
@@ -406,6 +440,43 @@ async function inlineBlobImages(html: string) {
       }
     }),
   );
+
+  return doc.body.innerHTML || "";
+}
+
+function removeUnsupportedDocxImages(html: string) {
+  if (typeof window === "undefined" || !html.toLowerCase().includes("<img")) {
+    return html;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const images = Array.from(doc.querySelectorAll("img"));
+
+  images.forEach((img) => {
+    const src = img.getAttribute("src") ?? "";
+
+    if (!src) {
+      img.remove();
+      return;
+    }
+
+    if (src.startsWith("blob:")) {
+      img.remove();
+      return;
+    }
+
+    if (!src.startsWith("data:")) {
+      return;
+    }
+
+    const match = /^data:([^;,]+)/i.exec(src);
+    const mime = match?.[1] ?? "";
+
+    if (!isSupportedDocxImageMime(mime)) {
+      img.remove();
+    }
+  });
 
   return doc.body.innerHTML || "";
 }
@@ -720,7 +791,8 @@ export default function DocumentsClient({
     const trimmedTitle = documentTitle?.trim();
     const docTitle = trimmedTitle || DEFAULT_DOCUMENT_TITLE;
     const contentWithInlinedImages = await inlineBlobImages(contentHtml);
-    const html = buildDocxHtml(contentWithInlinedImages, docTitle);
+    const contentWithoutUnsupportedImages = removeUnsupportedDocxImages(contentWithInlinedImages);
+    const html = buildDocxHtml(contentWithoutUnsupportedImages, docTitle);
     const lang = document.documentElement.lang?.trim();
     const docxOutput = await htmlToDocx(html, undefined, {
       title: docTitle,
