@@ -11,7 +11,7 @@ import {
   type DragEvent,
 } from "react";
 import { saveAs } from "file-saver";
-import htmlDocx from "html-docx-js/dist/html-docx";
+import htmlToDocx from "html-to-docx";
 
 type StatusMessage = {
   tone: "info" | "success" | "warning" | "error";
@@ -76,7 +76,15 @@ const allowedTags = new Set([
   "ul",
 ]);
 
-const allowedGlobalAttributes = new Set(["style", "class", "title", "id", "role"]);
+const allowedGlobalAttributes = new Set([
+  "style",
+  "class",
+  "title",
+  "id",
+  "role",
+  "lang",
+  "dir",
+]);
 
 const allowedAttributesByTag: Record<string, ReadonlySet<string>> = {
   img: new Set(["src", "alt", "title", "width", "height", "loading"]),
@@ -93,6 +101,7 @@ const allowedAttributesByTag: Record<string, ReadonlySet<string>> = {
 const allowedStyleProperties = new Set([
   "background",
   "background-color",
+  "background-clip",
   "border",
   "border-bottom",
   "border-bottom-color",
@@ -121,9 +130,18 @@ const allowedStyleProperties = new Set([
   "display",
   "float",
   "font-family",
+  "font-feature-settings",
   "font-size",
   "font-style",
+  "font-variant",
+  "font-variant-caps",
+  "font-variant-east-asian",
+  "font-variant-ligatures",
+  "font-variant-numeric",
+  "font-variation-settings",
   "font-weight",
+  "font-stretch",
+  "font-kerning",
   "height",
   "letter-spacing",
   "line-height",
@@ -151,13 +169,45 @@ const allowedStyleProperties = new Set([
   "table-layout",
   "text-align",
   "text-decoration",
+  "text-decoration-color",
+  "text-decoration-line",
+  "text-decoration-style",
+  "text-decoration-thickness",
   "text-indent",
+  "text-shadow",
+  "text-underline-offset",
+  "text-underline-position",
   "text-transform",
   "vertical-align",
   "white-space",
   "width",
   "word-spacing",
 ]);
+
+const FONT_FAMILIES: Array<{ label: string; value: string }> = [
+  { label: "Arial", value: "Arial, Helvetica, sans-serif" },
+  { label: "Calibri", value: '"Calibri", "Segoe UI", sans-serif' },
+  { label: "Cambria", value: '"Cambria", "Times New Roman", serif' },
+  { label: "Georgia", value: '"Georgia", "Times New Roman", serif' },
+  { label: "Helvetica", value: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
+  { label: "Inter", value: '"Inter", "Segoe UI", sans-serif' },
+  { label: "Times New Roman", value: '"Times New Roman", Times, serif' },
+  { label: "Trebuchet", value: '"Trebuchet MS", "Lucida Grande", sans-serif' },
+  { label: "Verdana", value: '"Verdana", Geneva, sans-serif' },
+];
+
+const FONT_SIZE_OPTIONS: Array<{ label: string; value: string }> = [
+  { label: "Smallest", value: "1" },
+  { label: "Small", value: "2" },
+  { label: "Normal", value: "3" },
+  { label: "Large", value: "4" },
+  { label: "Larger", value: "5" },
+  { label: "Extra large", value: "6" },
+  { label: "Huge", value: "7" },
+];
+
+const DEFAULT_TEXT_COLOR = "#1f2937";
+const DEFAULT_HIGHLIGHT_COLOR = "#fff59d";
 
 function isAllowedAttribute(tag: string, attribute: string) {
   if (allowedGlobalAttributes.has(attribute)) return true;
@@ -286,6 +336,22 @@ function buildDocxHtml(content: string, title: string) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>${safeTitle}</title></head><body>${content}</body></html>`;
 }
 
+function createDocxBlob(output: unknown) {
+  if (output instanceof Blob) {
+    return output;
+  }
+
+  if (output instanceof ArrayBuffer) {
+    return new Blob([output], { type: MIME_DOCX });
+  }
+
+  if (typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(output)) {
+    return new Blob([(output as ArrayBufferView).buffer], { type: MIME_DOCX });
+  }
+
+  throw new Error("Unsupported DOCX export format returned by converter.");
+}
+
 export default function DocumentsClient() {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -293,6 +359,20 @@ export default function DocumentsClient() {
   const [contentHtml, setContentHtml] = useState(DEFAULT_DOCUMENT_HTML);
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [fontFamilySelection, setFontFamilySelection] = useState("");
+  const [fontSizeSelection, setFontSizeSelection] = useState("");
+  const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
+  const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT_COLOR);
+
+  useEffect(() => {
+    try {
+      document.execCommand("styleWithCSS", false, "true");
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("styleWithCSS command is not supported", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -431,13 +511,35 @@ export default function DocumentsClient() {
     focusEditor();
   }, [focusEditor]);
 
-  const handleDownloadDocx = useCallback(() => {
-    const html = buildDocxHtml(contentHtml, documentTitle);
-    const blob = htmlDocx.asBlob(html);
-    const filename = `${documentTitle || DEFAULT_DOCUMENT_TITLE}.docx`;
-    saveAs(blob, filename);
-    setStatus({ tone: "success", text: `Downloaded ${filename}.` });
+  const createDocxArtifact = useCallback(async () => {
+    const trimmedTitle = documentTitle?.trim();
+    const docTitle = trimmedTitle || DEFAULT_DOCUMENT_TITLE;
+    const html = buildDocxHtml(contentHtml, docTitle);
+    const lang = document.documentElement.lang?.trim();
+    const docxOutput = await htmlToDocx(html, undefined, {
+      title: docTitle,
+      lang: lang || undefined,
+    });
+
+    return {
+      blob: createDocxBlob(docxOutput),
+      filename: docTitle.endsWith(".docx") ? docTitle : `${docTitle}.docx`,
+    };
   }, [contentHtml, documentTitle]);
+
+  const handleDownloadDocx = useCallback(async () => {
+    try {
+      const { blob, filename } = await createDocxArtifact();
+      saveAs(blob, filename);
+      setStatus({ tone: "success", text: `Downloaded ${filename}.` });
+    } catch (error) {
+      console.error(error);
+      setStatus({
+        tone: "error",
+        text: error instanceof Error ? error.message : "Failed to download document.",
+      });
+    }
+  }, [createDocxArtifact]);
 
   const requestPresignedUpload = useCallback(async (filename: string, size: number) => {
     const response = await fetch("/api/upload", {
@@ -456,10 +558,7 @@ export default function DocumentsClient() {
   const handleSaveToStorage = useCallback(async () => {
     try {
       setIsSaving(true);
-      const html = buildDocxHtml(contentHtml, documentTitle);
-      const blob = htmlDocx.asBlob(html);
-      const filenameBase = documentTitle?.trim() || DEFAULT_DOCUMENT_TITLE;
-      const filename = filenameBase.endsWith(".docx") ? filenameBase : `${filenameBase}.docx`;
+      const { blob, filename } = await createDocxArtifact();
       const { url } = await requestPresignedUpload(filename, blob.size);
 
       const uploadResponse = await fetch(url, {
@@ -483,7 +582,7 @@ export default function DocumentsClient() {
     } finally {
       setIsSaving(false);
     }
-  }, [contentHtml, documentTitle, requestPresignedUpload]);
+  }, [createDocxArtifact, requestPresignedUpload]);
 
   const onFileInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -529,6 +628,75 @@ export default function DocumentsClient() {
     applyCommand("removeFormat");
   }, [applyCommand]);
 
+  const handleFontFamilyChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const value = event.target.value;
+      setFontFamilySelection(value);
+
+      if (value) {
+        applyCommand("fontName", value);
+        requestAnimationFrame(() => setFontFamilySelection(""));
+      }
+    },
+    [applyCommand],
+  );
+
+  const handleFontSizeChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const value = event.target.value;
+      setFontSizeSelection(value);
+
+      if (value) {
+        applyCommand("fontSize", value);
+        requestAnimationFrame(() => setFontSizeSelection(""));
+      }
+    },
+    [applyCommand],
+  );
+
+  const handleTextColorChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setTextColor(value);
+      applyCommand("foreColor", value);
+    },
+    [applyCommand],
+  );
+
+  const handleHighlightColorChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setHighlightColor(value);
+
+      focusEditor();
+
+      let applied = false;
+
+      try {
+        if (typeof document.queryCommandSupported === "function" && document.queryCommandSupported("hiliteColor")) {
+          applied = document.execCommand("hiliteColor", false, value);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("hiliteColor command is not supported", error);
+        }
+      }
+
+      if (!applied) {
+        try {
+          document.execCommand("backColor", false, value);
+        } catch (error) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("backColor command is not supported", error);
+          }
+        }
+      }
+
+      updateContentFromEditor();
+    },
+    [focusEditor, updateContentFromEditor],
+  );
+
   return (
     <div className="document-workspace">
       <header className="document-header">
@@ -553,7 +721,7 @@ export default function DocumentsClient() {
             className="sr-only"
             onChange={onFileInputChange}
           />
-          <button className="drive-button-muted" onClick={handleDownloadDocx}>
+          <button className="drive-button-muted" onClick={() => void handleDownloadDocx()}>
             Download
           </button>
           <button
@@ -577,6 +745,30 @@ export default function DocumentsClient() {
         </label>
 
         <div className="document-toolbar">
+          <select
+            className="document-toolbar__select"
+            value={fontFamilySelection}
+            onChange={handleFontFamilyChange}
+          >
+            <option value="">Font family</option>
+            {FONT_FAMILIES.map((option) => (
+              <option key={option.label} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select
+            className="document-toolbar__select"
+            value={fontSizeSelection}
+            onChange={handleFontSizeChange}
+          >
+            <option value="">Font size</option>
+            {FONT_SIZE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           {toolbarButtons.map((button) => (
             <button
               key={button.label}
@@ -593,6 +785,14 @@ export default function DocumentsClient() {
           <button type="button" className="document-toolbar__button" onClick={handleClearFormatting}>
             Clear
           </button>
+          <label className="document-toolbar__color" aria-label="Text color">
+            <span>A</span>
+            <input type="color" value={textColor} onChange={handleTextColorChange} />
+          </label>
+          <label className="document-toolbar__color" aria-label="Highlight color">
+            <span className="document-toolbar__color-highlight">H</span>
+            <input type="color" value={highlightColor} onChange={handleHighlightColorChange} />
+          </label>
         </div>
       </section>
 
