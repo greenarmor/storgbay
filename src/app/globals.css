@@ -1772,3 +1772,220 @@ body.landing-active .drive-main {
     padding: 1.5rem;
   }
 }
+
+
+.document-workspace {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 3rem;
+  display: grid;
+  gap: 1.75rem;
+}
+
+.document-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.25rem;
+  background: var(--drive-surface);
+  padding: 1.6rem 1.75rem;
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: var(--drive-shadow);
+}
+
+.document-header__titles h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+}
+
+.document-header__titles p {
+  margin: 0.4rem 0 0;
+  color: var(--drive-muted);
+  max-width: 42ch;
+  line-height: 1.6;
+}
+
+.document-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.document-controls {
+  display: grid;
+  gap: 1rem;
+  background: var(--drive-surface);
+  padding: 1.4rem 1.75rem;
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: var(--drive-shadow);
+}
+
+.document-title-field {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--drive-muted);
+}
+
+.document-title-field input {
+  padding: 0.75rem 1rem;
+  border-radius: var(--drive-radius-md);
+  border: 1px solid var(--drive-border);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--drive-text);
+  background: var(--drive-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.document-title-field input:focus-visible {
+  outline: none;
+  border-color: var(--drive-accent);
+  box-shadow: 0 0 0 3px var(--drive-selection-ring);
+}
+
+.document-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.document-toolbar__button {
+  border-radius: var(--drive-radius-sm);
+  border: 1px solid var(--drive-border);
+  background: var(--drive-muted-surface);
+  color: var(--drive-text);
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.document-toolbar__button:hover,
+.document-toolbar__button:focus-visible {
+  background: var(--drive-accent-soft);
+  border-color: var(--drive-accent);
+  outline: none;
+}
+
+.document-editor {
+  background: var(--drive-surface);
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: var(--drive-shadow);
+  padding: 1.5rem;
+}
+
+.document-editor__canvas {
+  min-height: 480px;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--drive-radius-md);
+  border: 1px solid var(--drive-border);
+  background: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  font-size: 1rem;
+  color: var(--drive-text);
+  box-shadow: inset 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.document-editor__canvas:focus-visible {
+  outline: none;
+  border-color: var(--drive-accent);
+  box-shadow: inset 0 0 0 2px var(--drive-selection-ring);
+}
+
+.document-editor__canvas h1,
+.document-editor__canvas h2,
+.document-editor__canvas h3,
+.document-editor__canvas p,
+.document-editor__canvas ul,
+.document-editor__canvas ol {
+  margin-block: 0.75rem;
+}
+
+.document-editor__canvas ul,
+.document-editor__canvas ol {
+  padding-inline-start: 2rem;
+}
+
+.document-editor__canvas a {
+  color: var(--drive-accent);
+  text-decoration: underline;
+}
+
+.document-editor__canvas .doc-placeholder {
+  color: var(--drive-muted);
+}
+
+.document-help {
+  background: var(--drive-surface);
+  border-radius: var(--drive-radius-lg);
+  border: 1px solid var(--drive-border);
+  box-shadow: var(--drive-shadow);
+  padding: 1.5rem 1.75rem;
+}
+
+.document-help h2 {
+  margin: 0 0 0.75rem;
+}
+
+.document-help ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+  color: var(--drive-muted);
+}
+
+.document-status {
+  padding: 1rem 1.25rem;
+  border-radius: var(--drive-radius-md);
+  font-weight: 600;
+  box-shadow: var(--drive-shadow);
+  border: 1px solid transparent;
+  background: var(--drive-muted-surface);
+}
+
+.document-status--info {
+  background: var(--drive-info-bg);
+  border-color: var(--drive-info-border);
+  color: var(--drive-info-text);
+}
+
+.document-status--success {
+  background: var(--drive-success-bg);
+  border-color: var(--drive-success-border);
+  color: var(--drive-success-text);
+}
+
+.document-status--warning {
+  background: rgba(250, 204, 21, 0.18);
+  border-color: rgba(234, 179, 8, 0.35);
+  color: #854d0e;
+}
+
+.document-status--error {
+  background: var(--drive-error-bg);
+  border-color: var(--drive-error-border);
+  color: var(--drive-error-text);
+}
+
+@media (max-width: 768px) {
+  .document-workspace {
+    padding: 1.75rem 1.2rem 2.5rem;
+  }
+
+  .document-header,
+  .document-controls,
+  .document-editor,
+  .document-help {
+    padding: 1.25rem 1.2rem;
+  }
+
+  .document-editor__canvas {
+    padding: 1rem;
+  }
+}

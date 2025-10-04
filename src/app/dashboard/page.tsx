@@ -47,19 +47,22 @@ export default async function Dashboard() {
             Track folders you own, collaborate on shared galleries, and jump straight into organising your media.
           </p>
         </div>
-        <div className="dashboard-hero__actions">
-          <div className="dashboard-hero__stat">
-            <strong>{ownedCount}</strong>
-            <span>Folders you own</span>
+          <div className="dashboard-hero__actions">
+            <div className="dashboard-hero__stat">
+              <strong>{ownedCount}</strong>
+              <span>Folders you own</span>
+            </div>
+            <div className="dashboard-hero__stat">
+              <strong>{managedCount}</strong>
+              <span>Shared with you</span>
+            </div>
+            <Link href="/upload" className="drive-button-primary dashboard-hero__cta">
+              Upload new files
+            </Link>
+            <Link href="/documents" className="drive-button-muted dashboard-hero__cta">
+              Open document studio
+            </Link>
           </div>
-          <div className="dashboard-hero__stat">
-            <strong>{managedCount}</strong>
-            <span>Shared with you</span>
-          </div>
-          <Link href="/upload" className="drive-button-primary dashboard-hero__cta">
-            Upload new files
-          </Link>
-        </div>
       </header>
 
       <div className="dashboard-sections">
