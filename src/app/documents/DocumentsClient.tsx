@@ -758,7 +758,15 @@ export default function DocumentsClient({
     let lastIndexWithContent = -1;
 
     pages.forEach((page, index) => {
-      if (page.innerHTML.trim()) {
+      const text = page.textContent ?? "";
+      const hasTextContent = text.replace(/\u00a0/g, " ").trim().length > 0;
+      const hasNonTextContent = Boolean(
+        page.querySelector(
+          "img,svg,video,audio,iframe,object,embed,canvas,table,ul,ol,li,blockquote,figure,picture,math,code,pre",
+        ),
+      );
+
+      if (hasTextContent || hasNonTextContent) {
         lastIndexWithContent = index;
       }
     });
