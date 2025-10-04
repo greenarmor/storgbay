@@ -7,13 +7,13 @@ A minimal, ready-to-run scaffold for a **file sharing + image gallery** web app.
 - Auth.js (NextAuth v5) with **Credentials** and Prisma Adapter
 - Prisma (MySQL) schema for users/files/galleries/shares
 - MinIO (S3) integration with **presigned PUT** (upload) and **presigned GET** (for private galleries)
-- Built-in document viewer for previewing Word documents stored in Storgbay
+- Built-in document viewer for previewing Word, Excel, PowerPoint, and PDF documents stored in Storgbay
 - Public-by-default galleries (requires enabling anonymous read on the MinIO bucket)
 
 ## Document viewer
 
 - Open the dashboard and click **Open document viewer** (or visit `/documents`).
-- Select a stored `.docx` file or a Google Docs link to load it in the embedded preview.
+- Select a stored Office file (`.docx`, `.pptx`, `.xlsx`), a PDF, or a Google Docs link to load it in the embedded preview.
 - Use the **Open original** button to launch the document in a dedicated tab if the embedded preview requires additional authentication.
 - Download a copy of the original file at any time for offline access or editing in your preferred word processor.
 

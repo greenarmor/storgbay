@@ -17,6 +17,7 @@
 .DS_Store
 *.pem
 prisma/generated
+*.tsbuildinfo
 
 # Debug
 npm-debug.log*

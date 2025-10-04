@@ -74,9 +74,9 @@ function matchesFilter(file: LibraryFileItem, filter: Filter): boolean {
     case "audio":
       return isAudio(file.mime);
     case "documents":
-      return isPdf(file.mime) || isDocumentFile(file.mime, file.filename);
+      return isPdf(file.mime, file.filename) || isDocumentFile(file.mime, file.filename);
     case "other":
-      return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime);
+      return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime, file.filename);
     default:
       return true;
   }
@@ -491,7 +491,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
                       <video src={item.url} controls style={{ width: "100%", borderRadius: 8 }} />
                     ) : isAudio(item.mime) ? (
                       <audio src={item.url} controls style={{ width: "100%" }} />
-                    ) : isPdf(item.mime) ? (
+                    ) : isPdf(item.mime, item.filename) ? (
                       <iframe
                         src={item.url}
                         style={{

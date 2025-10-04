@@ -8,7 +8,7 @@ export type StatusMessage = {
   text: string;
 };
 
-type InitialDocument = { id: string; filename: string; url: string };
+type InitialDocument = { id: string; filename: string; url: string; mime: string | null };
 
 export type DocumentsClientProps = {
   initialDocument?: InitialDocument | null;
@@ -20,6 +20,49 @@ type ViewerInfo = {
   provider: "microsoft" | "google" | "direct";
 };
 
+const MICROSOFT_OFFICE_EXTENSIONS = new Set([
+  "doc",
+  "docx",
+  "docm",
+  "dot",
+  "dotx",
+  "xls",
+  "xlsx",
+  "xlsm",
+  "xlsb",
+  "xlt",
+  "xltx",
+  "ppt",
+  "pptx",
+  "pptm",
+  "pps",
+  "ppsx",
+  "ppsm",
+]);
+
+const MICROSOFT_OFFICE_MIME_TYPES = new Set([
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-word.document.macroenabled.12",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel.sheet.macroenabled.12",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+]);
+
+const GOOGLE_VIEWER_EXTENSIONS = new Set(["gdoc", "gsheet", "gslides", "txt", "csv", "tsv"]);
+
+const GOOGLE_VIEWER_MIME_TYPES = new Set([
+  "application/vnd.google-apps.document",
+  "application/vnd.google-apps.spreadsheet",
+  "application/vnd.google-apps.presentation",
+  "text/plain",
+  "text/csv",
+  "text/tab-separated-values",
+]);
+
 const toneStyles: Record<StatusMessage["tone"], { background: string; color: string; border: string }> = {
   info: { background: "#e3f2fd", color: "#0d47a1", border: "#90caf9" },
   success: { background: "#e8f5e9", color: "#1b5e20", border: "#a5d6a7" },
@@ -30,9 +73,16 @@ const toneStyles: Record<StatusMessage["tone"], { background: string; color: str
 function buildViewerInfo(document: InitialDocument): ViewerInfo {
   const sourceUrl = document.url;
   const lowerFilename = document.filename.toLowerCase();
+  const extension = lowerFilename.split(".").pop() ?? "";
+  const mime = document.mime?.toLowerCase() ?? "";
   const isDocx = lowerFilename.endsWith(".docx");
   const isGoogleDocFile = lowerFilename.endsWith(".gdoc");
   const isGoogleDocLink = /docs\.google\.com\/(document|spreadsheets|presentation)/i.test(sourceUrl);
+  const isPdf = mime === "application/pdf" || extension === "pdf";
+
+  if (isPdf) {
+    return { url: sourceUrl, provider: "direct" };
+  }
 
   if (isGoogleDocLink) {
     const previewUrl = sourceUrl.includes("/edit")
@@ -42,14 +92,18 @@ function buildViewerInfo(document: InitialDocument): ViewerInfo {
     return { url: previewUrl, provider: "google" };
   }
 
-  if (isDocx) {
+  if (
+    isDocx ||
+    MICROSOFT_OFFICE_EXTENSIONS.has(extension) ||
+    MICROSOFT_OFFICE_MIME_TYPES.has(mime)
+  ) {
     return {
       url: `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(sourceUrl)}`,
       provider: "microsoft",
     };
   }
 
-  if (isGoogleDocFile) {
+  if (isGoogleDocFile || GOOGLE_VIEWER_EXTENSIONS.has(extension) || GOOGLE_VIEWER_MIME_TYPES.has(mime)) {
     return {
       url: `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(sourceUrl)}`,
       provider: "google",
@@ -92,8 +146,8 @@ export default function DocumentsClient({
       <header style={{ display: "grid", gap: 8 }}>
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 600 }}>Document viewer</h1>
         <p style={{ margin: 0, color: "#4b5563", fontSize: 16 }}>
-          Preview Word documents stored in Storgbay. Choose a document from your library or a shared gallery to
-          start viewing.
+          Preview Word, Excel, PowerPoint, and PDF documents stored in Storgbay. Choose a document from your
+          library or a shared gallery to start viewing.
         </p>
       </header>
 
@@ -228,11 +282,11 @@ export default function DocumentsClient({
           </span>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>Select a document to preview</h2>
           <p style={{ margin: 0, fontSize: 15 }}>
-            Pick a <strong>.docx</strong> file or a Google Docs link from your storage. You can choose files from the{" "}
+            Pick an Office document, PDF, or a Google Docs link from your storage. You can choose files from the{" "}
             <Link href="/dashboard" style={{ color: "#1a73e8" }}>
               dashboard
             </Link>{" "}
-            or from any shared gallery that includes Word documents.
+            or from any shared gallery that includes compatible documents.
           </p>
         </section>
       )}

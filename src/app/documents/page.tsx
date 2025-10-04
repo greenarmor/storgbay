@@ -2,7 +2,7 @@ import DocumentsClient from "./DocumentsClient";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isDocumentFile } from "@/lib/file-utils";
+import { isDocumentFile, isPdf } from "@/lib/file-utils";
 import { presignGet } from "@/lib/s3";
 
 type PageProps = {
@@ -13,7 +13,7 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const fileId = params.file?.trim();
 
-  let initialDocument: { id: string; filename: string; url: string } | null = null;
+  let initialDocument: { id: string; filename: string; url: string; mime: string | null } | null = null;
   let initialStatus: { tone: "info" | "success" | "warning" | "error"; text: string } | null = null;
 
   if (fileId) {
@@ -38,7 +38,7 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
         },
       });
 
-      if (!file || !isDocumentFile(file.mime, file.filename)) {
+      if (!file || (!isDocumentFile(file.mime, file.filename) && !isPdf(file.mime, file.filename))) {
         initialStatus = {
           tone: "error",
           text: "We couldn't find a compatible document to view.",
@@ -62,7 +62,7 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
         } else {
           try {
             const url = await presignGet(file.key);
-            initialDocument = { id: file.id, filename: file.filename, url };
+            initialDocument = { id: file.id, filename: file.filename, url, mime: file.mime };
           } catch (error) {
             console.error("Failed to prepare document for viewing", error);
             initialStatus = {

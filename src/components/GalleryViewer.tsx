@@ -50,9 +50,9 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
     case "audio":
       return isAudio(file.mime);
     case "documents":
-      return isPdf(file.mime) || isDocumentFile(file.mime, file.filename);
+      return isPdf(file.mime, file.filename) || isDocumentFile(file.mime, file.filename);
     case "other":
-      return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime);
+      return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime, file.filename);
     default:
       return true;
   }
@@ -60,6 +60,10 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
 
 function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => void }) {
   const imageStyles = { width: "100%", height: "auto", borderRadius: 8, cursor: onClick ? "pointer" : "default" } as const;
+
+  if (isPdf(file.mime, file.filename)) {
+    return <iframe src={file._url ?? undefined} style={{ width: "100%", height: 280, border: "1px solid #eee", borderRadius: 8 }} />;
+  }
 
   if (isDocumentFile(file.mime, file.filename)) {
     return (
@@ -124,10 +128,6 @@ function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => vo
 
   if (isAudio(file.mime)) {
     return <audio src={file._url} controls style={{ width: "100%" }} />;
-  }
-
-  if (isPdf(file.mime)) {
-    return <iframe src={file._url} style={{ width: "100%", height: 280, border: "1px solid #eee", borderRadius: 8 }} />;
   }
 
   return (
@@ -478,7 +478,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               />
             ) : isAudio(activeFile.mime) ? (
               <audio src={activeFile._url ?? undefined} controls autoPlay={isPlaying} style={{ width: "min(800px, 100%)" }} />
-            ) : isPdf(activeFile.mime) ? (
+            ) : isPdf(activeFile.mime, activeFile.filename) ? (
               <iframe
                 src={activeFile._url ?? undefined}
                 style={{ width: "min(1200px, 100%)", height: "100%", border: "none", borderRadius: 12, background: "#fff" }}

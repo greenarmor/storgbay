@@ -20,21 +20,78 @@ export function isAudio(mime?: string | null): boolean {
   return !!mime && mime.startsWith("audio/");
 }
 
-export function isPdf(mime?: string | null): boolean {
-  return mime === "application/pdf";
-}
-
-export function isDocumentFile(mime?: string | null, filename?: string | null): boolean {
+export function isPdf(mime?: string | null, filename?: string | null): boolean {
   const normalizedMime = mime?.toLowerCase() ?? "";
-  if (
-    normalizedMime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    normalizedMime === "application/vnd.google-apps.document"
-  ) {
+  if (normalizedMime === "application/pdf") {
     return true;
   }
 
   const normalizedFilename = filename?.toLowerCase() ?? "";
-  return normalizedFilename.endsWith(".docx") || normalizedFilename.endsWith(".gdoc");
+  return normalizedFilename.endsWith(".pdf");
+}
+
+const DOCUMENT_MIME_TYPES = new Set([
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+  "application/vnd.ms-word.document.macroenabled.12",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+  "application/vnd.ms-excel.sheet.macroenabled.12",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+  "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+  "application/pdf",
+  "application/vnd.google-apps.document",
+  "application/vnd.google-apps.presentation",
+  "application/vnd.google-apps.spreadsheet",
+  "text/plain",
+  "text/csv",
+  "text/tab-separated-values",
+]);
+
+const DOCUMENT_EXTENSIONS = new Set([
+  "doc",
+  "docx",
+  "docm",
+  "dot",
+  "dotx",
+  "rtf",
+  "pdf",
+  "xls",
+  "xlsx",
+  "xlsm",
+  "xlsb",
+  "xlt",
+  "xltx",
+  "csv",
+  "tsv",
+  "txt",
+  "ppt",
+  "pptx",
+  "pptm",
+  "pps",
+  "ppsx",
+  "ppsm",
+  "odt",
+  "odp",
+  "ods",
+  "gdoc",
+  "gslides",
+  "gsheet",
+]);
+
+export function isDocumentFile(mime?: string | null, filename?: string | null): boolean {
+  const normalizedMime = mime?.toLowerCase() ?? "";
+  if (DOCUMENT_MIME_TYPES.has(normalizedMime)) {
+    return true;
+  }
+
+  const normalizedFilename = filename?.toLowerCase() ?? "";
+  const extension = normalizedFilename.split(".").pop() ?? "";
+  return DOCUMENT_EXTENSIONS.has(extension);
 }
 
 export function formatBytes(bytes: number): string {
