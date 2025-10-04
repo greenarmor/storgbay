@@ -1012,8 +1012,9 @@ export default function DocumentsClient({
   useEffect(() => {
     if (!pageContextMenu) return;
 
-    const handlePointer = (event: MouseEvent) => {
-      if (contextMenuRef.current?.contains(event.target as Node)) {
+    const handlePointer = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Node && contextMenuRef.current?.contains(target)) {
         return;
       }
 
