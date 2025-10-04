@@ -405,14 +405,15 @@ export default function DocumentsClient({
 
   const pageWidthPx = useMemo(() => mmToPx(DEFAULT_PAGE_SIZE.widthMm), []);
   const pageHeightPx = useMemo(() => mmToPx(DEFAULT_PAGE_SIZE.heightMm), []);
-  const workspaceStyle = useMemo<CSSProperties>(
-    () => ({
-      "--document-page-width": `${pageWidthPx}px`,
-      "--document-page-height": `${pageHeightPx}px`,
-      "--document-page-scale": pageScale.toString(),
-      "--document-page-width-scaled": `${pageWidthPx * pageScale}px`,
-      "--document-page-height-scaled": `${pageHeightPx * pageScale}px`,
-    }),
+  const workspaceStyle = useMemo(
+    () =>
+      ({
+        "--document-page-width": `${pageWidthPx}px`,
+        "--document-page-height": `${pageHeightPx}px`,
+        "--document-page-scale": pageScale.toString(),
+        "--document-page-width-scaled": `${pageWidthPx * pageScale}px`,
+        "--document-page-height-scaled": `${pageHeightPx * pageScale}px`,
+      }) as CSSProperties,
     [pageWidthPx, pageHeightPx, pageScale],
   );
 
