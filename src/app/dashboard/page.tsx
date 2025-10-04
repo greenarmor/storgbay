@@ -60,7 +60,7 @@ export default async function Dashboard() {
               Upload new files
             </Link>
             <Link href="/documents" className="drive-button-muted dashboard-hero__cta">
-              Open document studio
+              Create new document
             </Link>
           </div>
       </header>

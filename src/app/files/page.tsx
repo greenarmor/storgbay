@@ -31,6 +31,14 @@ export default async function FilesPage({
           Organise your uploads, build galleries, and preview any media in one place.
         </p>
       </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <Link href="/upload" className="drive-button-primary">
+          Upload new files
+        </Link>
+        <Link href="/documents" className="drive-button-muted">
+          Create new document
+        </Link>
+      </div>
       <FileManager initialSearch={params.query ?? ""} />
     </div>
   );
