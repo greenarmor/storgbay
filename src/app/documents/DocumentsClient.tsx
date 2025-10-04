@@ -338,11 +338,12 @@ function plainTextToHtml(input: string) {
 
 function detectImport(file: File): ImportOption {
   const name = file.name.toLowerCase();
+  const type = file.type?.toLowerCase() ?? "";
 
   if (name.endsWith(".docx")) return "docx";
   if (name.endsWith(".gdoc")) return "gdoc";
-  if (name.endsWith(".html") || file.type === "text/html") return "html";
-  if (file.type.startsWith("text/")) return "text";
+  if (name.endsWith(".html") || type === "text/html") return "html";
+  if (type.startsWith("text/")) return "text";
 
   return "unsupported";
 }
