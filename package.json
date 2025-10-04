@@ -11,6 +11,7 @@
     "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "lint": "next lint",
     "db:migrate": "prisma migrate dev --name init",
     "db:seed": "tsx prisma/seed.ts",
     "release": "npx prisma generate && npm version patch && npm publish"
@@ -39,6 +40,10 @@
     "@types/node": "24.5.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.4",
     "prisma": "^5.20.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"

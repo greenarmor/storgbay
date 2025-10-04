@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppSessionUser } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -32,6 +34,15 @@ export function HeaderActions({ sessionUser }: HeaderActionsProps) {
   const handleCloseModal = useCallback(() => {
     setModalOpen(false);
   }, []);
+
+  const handleSignOut = useCallback(() => {
+    void signOut();
+  }, []);
+
+  const handleMenuSignOut = useCallback(() => {
+    handleCloseMenu();
+    void signOut();
+  }, [handleCloseMenu]);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -76,13 +87,18 @@ export function HeaderActions({ sessionUser }: HeaderActionsProps) {
             </span>
           )}
           {sessionUser ? (
-            <a role="listitem" className="drive-pill" href="/api/auth/signout">
+            <button
+              type="button"
+              role="listitem"
+              className="drive-pill"
+              onClick={handleSignOut}
+            >
               Sign out
-            </a>
+            </button>
           ) : (
-            <a role="listitem" className="drive-pill" href="/login">
+            <Link role="listitem" className="drive-pill" href="/login">
               Sign in
-            </a>
+            </Link>
           )}
         </div>
         <div className="drive-header-menu" ref={menuRef}>
@@ -113,24 +129,24 @@ export function HeaderActions({ sessionUser }: HeaderActionsProps) {
                   >
                     Account Settings
                   </button>
-                  <a
-                    href="/api/auth/signout"
+                  <button
+                    type="button"
                     className="drive-header-menu-item"
                     role="menuitem"
-                    onClick={handleCloseMenu}
+                    onClick={handleMenuSignOut}
                   >
                     Sign out
-                  </a>
+                  </button>
                 </>
               ) : (
-                <a
+                <Link
                   href="/login"
                   className="drive-header-menu-item"
                   role="menuitem"
                   onClick={handleCloseMenu}
                 >
                   Sign in
-                </a>
+                </Link>
               )}
             </div>
           )}

@@ -1,25 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
-
-const featureHighlights = [
-  {
-    title: "Effortless uploads",
-    description:
-      "Send entire folders or high-resolution galleries in seconds with Storgbay's optimized pipeline.",
-  },
-  {
-    title: "Crystal-clear organization",
-    description:
-      "Keep your creative workspaces tidy with smart collections, powerful search, and instant previews.",
-  },
-  {
-    title: "Share on your terms",
-    description:
-      "Collaborate securely with password-protected links, expiring shares, and real-time analytics.",
-  },
-];
 
 export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,20 +69,19 @@ export function LandingPage({ isAuthenticated }: { isAuthenticated: boolean }) {
     };
   }, []);
 
-  const primaryCtaHref = isAuthenticated ? "/dashboard" : "/login";
-  const primaryCtaLabel = isAuthenticated ? "Open my drive" : "Start uploading";
-
   return (
     <div ref={containerRef} className="landing-page">
       <section className="landing-hero">
         <div className="landing-hero-content">
-          <span className="landing-badge">BUILT FOR VELOCITY</span>
+          <span className="landing-badge">
+            {isAuthenticated ? "WELCOME BACK" : "BUILT FOR VELOCITY"}
+          </span>
           <h1>
             Everything you need to keep content flowing
             <span className="landing-highlight"> beautifully.</span>
           </h1>
           <p>
-            Storgbay is your creative team's command center for assets. Upload
+            Storgbay is your creative team&apos;s command center for assets. Upload
             once, collaborate from anywhere, and deliver experiences that wow
             your clients.
           </p>
