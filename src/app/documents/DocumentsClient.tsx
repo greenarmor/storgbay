@@ -10,6 +10,7 @@ import {
   type ClipboardEvent,
   type DragEvent,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { saveAs } from "file-saver";
 import htmlToDocx from "html-to-docx";
@@ -155,6 +156,9 @@ const allowedAttributesByTag: Record<string, ReadonlySet<string>> = {
   ul: new Set(["type"]),
   li: new Set(["value"]),
 };
+
+const NON_TEXT_CONTENT_SELECTOR =
+  "img,svg,video,audio,iframe,object,embed,canvas,table,ul,ol,li,blockquote,figure,picture,math,code,pre";
 
 const allowedStyleProperties = new Set([
   "background",
@@ -378,6 +382,17 @@ function plainTextToHtml(input: string) {
   return paragraphs.join("");
 }
 
+const pageHasMeaningfulContent = (page: HTMLDivElement) => {
+  const text = page.textContent ?? "";
+  const hasTextContent = text.replace(/\u00a0/g, " ").trim().length > 0;
+
+  if (hasTextContent) {
+    return true;
+  }
+
+  return Boolean(page.querySelector(NON_TEXT_CONTENT_SELECTOR));
+};
+
 type PageMeasurementOptions = {
   pageWidth: number;
   pageHeight: number;
@@ -591,7 +606,7 @@ export default function DocumentsClient({
   initialDocument = null,
   initialStatus = null,
 }: DocumentsClientProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLElement | null>(null);
@@ -615,6 +630,13 @@ export default function DocumentsClient({
     [pageSizeId],
   );
   const [pageCount, setPageCount] = useState(1);
+  const [activePageIndex, setActivePageIndex] = useState(0);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const [pageContextMenu, setPageContextMenu] = useState<{
+    x: number;
+    y: number;
+    pageIndex: number;
+  } | null>(null);
 
   const pageWidthPx = useMemo(() => mmToPx(pageSize.widthMm), [pageSize.widthMm]);
   const pageHeightPx = useMemo(() => mmToPx(pageSize.heightMm), [pageSize.heightMm]);
@@ -740,6 +762,29 @@ export default function DocumentsClient({
         continue;
       }
 
+      if (!pageHasMeaningfulContent(page)) {
+        let movedContent = false;
+
+        while (!pageHasMeaningfulContent(page) && nextPage.childNodes.length > 0) {
+          const nodeToMove = nextPage.firstChild;
+          if (!nodeToMove) break;
+
+          page.appendChild(nodeToMove);
+
+          if (page.scrollHeight > maxHeight) {
+            page.removeChild(nodeToMove);
+            nextPage.insertBefore(nodeToMove, nextPage.firstChild);
+            break;
+          }
+
+          movedContent = true;
+        }
+
+        if (movedContent) {
+          needsAnotherPass = true;
+        }
+      }
+
       while (page.scrollHeight < maxHeight && nextPage.childNodes.length > 0) {
         const nodeToMove = nextPage.firstChild;
         if (!nodeToMove) break;
@@ -758,15 +803,7 @@ export default function DocumentsClient({
     let lastIndexWithContent = -1;
 
     pages.forEach((page, index) => {
-      const text = page.textContent ?? "";
-      const hasTextContent = text.replace(/\u00a0/g, " ").trim().length > 0;
-      const hasNonTextContent = Boolean(
-        page.querySelector(
-          "img,svg,video,audio,iframe,object,embed,canvas,table,ul,ol,li,blockquote,figure,picture,math,code,pre",
-        ),
-      );
-
-      if (hasTextContent || hasNonTextContent) {
+      if (pageHasMeaningfulContent(page)) {
         lastIndexWithContent = index;
       }
     });
@@ -881,6 +918,127 @@ export default function DocumentsClient({
     setContentHtml(sanitized || "<p><br/></p>");
   }, [resetOverflowDetection]);
 
+  const handlePageContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>, pageIndex: number) => {
+      event.preventDefault();
+      setActivePageIndex(pageIndex);
+
+      const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+      const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 0;
+      const menuWidth = 200;
+      const menuHeight = 60;
+
+      const x = viewportWidth ? Math.min(event.clientX, Math.max(0, viewportWidth - menuWidth)) : event.clientX;
+      const y = viewportHeight
+        ? Math.min(event.clientY, Math.max(0, viewportHeight - menuHeight))
+        : event.clientY;
+
+      setPageContextMenu({ x, y, pageIndex });
+    },
+    [],
+  );
+
+  const handleDeletePage = useCallback(
+    (pageIndex: number) => {
+      const pages = pageRefs.current.filter((page): page is HTMLDivElement => Boolean(page));
+      if (pages.length === 0) {
+        setPageContextMenu(null);
+        return;
+      }
+
+      if (pages.length === 1) {
+        const [onlyPage] = pages;
+        if (onlyPage) {
+          onlyPage.innerHTML = "";
+        }
+        setActivePageIndex(0);
+        updateContentFromEditor();
+        resetOverflowDetection();
+        setPageContextMenu(null);
+        schedulePageCountRecalculation();
+        return;
+      }
+
+      const boundedIndex = Math.min(Math.max(pageIndex, 0), pages.length - 1);
+      const targetPage = pages[boundedIndex];
+      if (!targetPage) {
+        setPageContextMenu(null);
+        return;
+      }
+
+      targetPage.innerHTML = "";
+
+      for (let index = boundedIndex; index < pages.length - 1; index += 1) {
+        const currentPage = pages[index];
+        const nextPage = pages[index + 1];
+        if (!currentPage || !nextPage) continue;
+
+        while (nextPage.firstChild) {
+          currentPage.appendChild(nextPage.firstChild);
+        }
+      }
+
+      const lastPage = pages[pages.length - 1];
+      if (lastPage) {
+        lastPage.innerHTML = "";
+      }
+
+      updateContentFromEditor();
+      resetOverflowDetection();
+      setPageCount((current) => Math.max(1, current - 1));
+      setActivePageIndex((current) => {
+        const newTotal = Math.max(1, pages.length - 1);
+        if (current > boundedIndex) {
+          return Math.max(0, current - 1);
+        }
+
+        if (current >= newTotal) {
+          return Math.max(0, newTotal - 1);
+        }
+
+        return Math.min(current, newTotal - 1);
+      });
+      setPageContextMenu(null);
+      schedulePageCountRecalculation();
+    },
+    [pageRefs, resetOverflowDetection, schedulePageCountRecalculation, updateContentFromEditor],
+  );
+
+  useEffect(() => {
+    pageRefs.current.length = pageCount;
+    setActivePageIndex((current) => Math.min(current, Math.max(0, pageCount - 1)));
+  }, [pageCount]);
+
+  useEffect(() => {
+    if (!pageContextMenu) return;
+
+    const handlePointer = (event: MouseEvent) => {
+      if (contextMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setPageContextMenu(null);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPageContextMenu(null);
+      }
+    };
+
+    window.addEventListener("mousedown", handlePointer);
+    window.addEventListener("scroll", handlePointer, true);
+    window.addEventListener("resize", handlePointer);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointer);
+      window.removeEventListener("scroll", handlePointer, true);
+      window.removeEventListener("resize", handlePointer);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [pageContextMenu]);
+
   const handleInput = useCallback(() => {
     updateContentFromEditor();
     schedulePageCountRecalculation();
@@ -917,6 +1075,8 @@ export default function DocumentsClient({
           setDocumentTitle(file.name.replace(/\.docx$/i, ""));
           const pageLabel = pages === 1 ? "page" : "pages";
           setStatus({ tone: "success", text: `Imported ${file.name} (${pages} ${pageLabel}).` });
+          setActivePageIndex(0);
+          setPageContextMenu(null);
           schedulePageCountRecalculation();
           break;
         }
@@ -930,6 +1090,8 @@ export default function DocumentsClient({
           setDocumentTitle(file.name.replace(/\.html?$/i, ""));
           const pageLabel = pages === 1 ? "page" : "pages";
           setStatus({ tone: "success", text: `Imported ${file.name} (${pages} ${pageLabel}).` });
+          setActivePageIndex(0);
+          setPageContextMenu(null);
           schedulePageCountRecalculation();
           break;
         }
@@ -946,6 +1108,8 @@ export default function DocumentsClient({
             tone: "success",
             text: `Converted ${file.name} to a rich text document (${pages} ${pageLabel}).`,
           });
+          setActivePageIndex(0);
+          setPageContextMenu(null);
           schedulePageCountRecalculation();
           break;
         }
@@ -1072,6 +1236,8 @@ export default function DocumentsClient({
     setDocumentTitle(DEFAULT_DOCUMENT_TITLE);
     setContentHtml(DEFAULT_DOCUMENT_HTML);
     setStatus({ tone: "info", text: "Started a fresh document." });
+    setActivePageIndex(0);
+    setPageContextMenu(null);
     focusEditor();
     schedulePageCountRecalculation();
   }, [focusEditor, resetOverflowDetection, schedulePageCountRecalculation]);
@@ -1425,18 +1591,29 @@ export default function DocumentsClient({
                 {Array.from({ length: pageCount }).map((_, index) => (
                   <div
                     key={index}
-                    ref={(element) => {
-                      pageRefs.current[index] = element;
-                    }}
-                    className="document-editor__page-content"
-                    contentEditable
-                    suppressContentEditableWarning
-                    style={{ height: `${pageHeightPx}px` }}
-                    onInput={handleInput}
-                    onPaste={handlePaste}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                  />
+                    className="document-editor__page-layer"
+                    data-active={index === activePageIndex}
+                  >
+                    <div
+                      ref={(element) => {
+                        pageRefs.current[index] = element;
+                      }}
+                      className="document-editor__page-content"
+                      contentEditable
+                      suppressContentEditableWarning
+                      style={{ height: `${pageHeightPx}px` }}
+                      onInput={handleInput}
+                      onPaste={handlePaste}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      onFocus={() => setActivePageIndex(index)}
+                      onMouseDown={() => setActivePageIndex(index)}
+                      onContextMenu={(event) => handlePageContextMenu(event, index)}
+                    />
+                    <div className="document-editor__page-number" aria-hidden="true">
+                      Page {index + 1}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1456,6 +1633,22 @@ export default function DocumentsClient({
       {status && (
         <div className={`document-status document-status--${status.tone}`}>
           {status.text}
+        </div>
+      )}
+      {pageContextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="document-context-menu"
+          style={{ top: `${pageContextMenu.y}px`, left: `${pageContextMenu.x}px` }}
+          role="menu"
+        >
+          <button
+            type="button"
+            className="document-context-menu__item"
+            onClick={() => handleDeletePage(pageContextMenu.pageIndex)}
+          >
+            Delete page {pageContextMenu.pageIndex + 1}
+          </button>
         </div>
       )}
     </div>
