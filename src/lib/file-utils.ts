@@ -24,6 +24,16 @@ export function isPdf(mime?: string | null): boolean {
   return mime === "application/pdf";
 }
 
+export function isDocx(mime?: string | null, filename?: string | null): boolean {
+  const normalizedMime = mime?.toLowerCase() ?? "";
+  if (normalizedMime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    return true;
+  }
+
+  const normalizedFilename = filename?.toLowerCase() ?? "";
+  return normalizedFilename.endsWith(".docx");
+}
+
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes)) return "-";
   if (bytes === 0) return "0 B";

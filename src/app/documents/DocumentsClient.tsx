@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
   type ClipboardEvent,
   type DragEvent,
+  type CSSProperties,
 } from "react";
 import { saveAs } from "file-saver";
 import htmlToDocx from "html-to-docx";
@@ -20,12 +21,27 @@ type StatusMessage = {
 
 type ImportOption = "docx" | "html" | "text" | "gdoc" | "unsupported";
 
+type InitialDocument = { id: string; filename: string; url: string };
+
+export type DocumentsClientProps = {
+  initialDocument?: InitialDocument | null;
+  initialStatus?: StatusMessage | null;
+};
+
 const DEFAULT_DOCUMENT_TITLE = "Untitled document";
 const DEFAULT_DOCUMENT_HTML =
   '<p class="doc-placeholder">Start typing or import a document to begin.</p>';
 
+const DEFAULT_PAGE_SIZE = { label: "A4", widthMm: 210, heightMm: 297 } as const;
+
+const MM_PER_INCH = 25.4;
+const SCREEN_DPI = 96;
+const MIN_PAGE_SCALE = 0.5;
+
 const MIME_DOCX =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+const mmToPx = (mm: number) => (mm / MM_PER_INCH) * SCREEN_DPI;
 
 const allowedTags = new Set([
   "a",
@@ -368,17 +384,83 @@ function createDocxBlob(output: unknown) {
   throw new Error("Unsupported DOCX export format returned by converter.");
 }
 
-export default function DocumentsClient() {
+export default function DocumentsClient({
+  initialDocument = null,
+  initialStatus = null,
+}: DocumentsClientProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const editorContainerRef = useRef<HTMLElement | null>(null);
+  const lastLoadedDocumentId = useRef<string | null>(null);
   const [documentTitle, setDocumentTitle] = useState(DEFAULT_DOCUMENT_TITLE);
   const [contentHtml, setContentHtml] = useState(DEFAULT_DOCUMENT_HTML);
-  const [status, setStatus] = useState<StatusMessage | null>(null);
+  const [status, setStatus] = useState<StatusMessage | null>(initialStatus ?? null);
   const [isSaving, setIsSaving] = useState(false);
   const [fontFamilySelection, setFontFamilySelection] = useState("");
   const [fontSizeSelection, setFontSizeSelection] = useState("");
   const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT_COLOR);
+  const [showRuler, setShowRuler] = useState(false);
+  const [pageScale, setPageScale] = useState(1);
+
+  const pageWidthPx = useMemo(() => mmToPx(DEFAULT_PAGE_SIZE.widthMm), []);
+  const pageHeightPx = useMemo(() => mmToPx(DEFAULT_PAGE_SIZE.heightMm), []);
+  const workspaceStyle = useMemo<CSSProperties>(
+    () => ({
+      "--document-page-width": `${pageWidthPx}px`,
+      "--document-page-height": `${pageHeightPx}px`,
+      "--document-page-scale": pageScale.toString(),
+      "--document-page-width-scaled": `${pageWidthPx * pageScale}px`,
+      "--document-page-height-scaled": `${pageHeightPx * pageScale}px`,
+    }),
+    [pageWidthPx, pageHeightPx, pageScale],
+  );
+
+  const rulerMarks = useMemo(
+    () => {
+      const totalWidthMm = DEFAULT_PAGE_SIZE.widthMm;
+      const marks: Array<{ key: string; position: number; label?: string; type: "major" | "mid" }> = [];
+      const totalCentimetres = Math.round(totalWidthMm / 10);
+
+      for (let cm = 0; cm <= totalCentimetres; cm += 1) {
+        const position = (cm * 10) / totalWidthMm;
+        marks.push({ key: `cm-${cm}`, position, label: `${cm}`, type: "major" });
+
+        if (cm < totalCentimetres) {
+          const midPosition = (cm * 10 + 5) / totalWidthMm;
+          marks.push({ key: `half-${cm}`, position: midPosition, type: "mid" });
+        }
+      }
+
+      return marks;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!editorContainerRef.current) return;
+    if (typeof ResizeObserver === "undefined") return;
+
+    const element = editorContainerRef.current;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+
+      const availableWidth = entry.contentRect.width;
+      if (!Number.isFinite(availableWidth) || availableWidth <= 0) {
+        return;
+      }
+
+      const proposedScale = availableWidth / pageWidthPx;
+      const nextScale = Math.min(1, Math.max(proposedScale, MIN_PAGE_SCALE));
+
+      setPageScale((current) => (Math.abs(current - nextScale) > 0.01 ? nextScale : current));
+    });
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [pageWidthPx]);
 
   useEffect(() => {
     try {
@@ -510,6 +592,54 @@ export default function DocumentsClient() {
   const focusEditor = useCallback(() => {
     editorRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!initialDocument) {
+      lastLoadedDocumentId.current = null;
+      return;
+    }
+
+    if (initialDocument.id === lastLoadedDocumentId.current) {
+      return;
+    }
+
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    lastLoadedDocumentId.current = initialDocument.id;
+
+    void (async () => {
+      try {
+        setStatus({ tone: "info", text: `Loading ${initialDocument.filename}…` });
+        const response = await fetch(initialDocument.url, {
+          signal: controller?.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load document (${response.status})`);
+        }
+
+        const blob = await response.blob();
+        if (controller?.signal.aborted) return;
+
+        const mimeType = response.headers.get("Content-Type") ?? MIME_DOCX;
+        const file = new File([blob], initialDocument.filename, { type: mimeType });
+
+        await handleImport(file);
+        focusEditor();
+      } catch (error) {
+        if (controller?.signal.aborted) return;
+        console.error(error);
+        setStatus({
+          tone: "error",
+          text:
+            error instanceof Error
+              ? error.message
+              : "Unable to load the stored document. Try downloading it instead.",
+        });
+      }
+    })();
+
+    return () => controller?.abort();
+  }, [initialDocument, handleImport, focusEditor]);
 
   const applyCommand = useCallback(
     (command: string, value?: string) => {
@@ -760,6 +890,20 @@ export default function DocumentsClient() {
           />
         </label>
 
+        <div className="document-controls__options">
+          <span className="document-controls__page-size">
+            Page size: {DEFAULT_PAGE_SIZE.label} ({DEFAULT_PAGE_SIZE.widthMm} × {DEFAULT_PAGE_SIZE.heightMm} mm)
+          </span>
+          <button
+            type="button"
+            className="drive-button-ghost"
+            onClick={() => setShowRuler((value) => !value)}
+            aria-pressed={showRuler}
+          >
+            {showRuler ? "Hide ruler" : "Show ruler"}
+          </button>
+        </div>
+
         <div className="document-toolbar">
           <select
             className="document-toolbar__select"
@@ -812,17 +956,39 @@ export default function DocumentsClient() {
         </div>
       </section>
 
-      <section className="document-editor">
-        <div
-          ref={editorRef}
-          className="document-editor__canvas"
-          contentEditable
-          suppressContentEditableWarning
-          onInput={handleInput}
-          onPaste={handlePaste}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        />
+      <section className="document-editor" ref={editorContainerRef}>
+        <div className="document-editor__workspace" style={workspaceStyle}>
+          {showRuler && (
+            <div className="document-ruler" aria-hidden="true">
+              <div className="document-ruler__scale">
+                {rulerMarks.map((mark) => (
+                  <span
+                    key={mark.key}
+                    className={`document-ruler__tick document-ruler__tick--${mark.type}`}
+                    style={{ left: `${mark.position * 100}%` }}
+                  >
+                    {mark.label ?? ""}
+                  </span>
+                ))}
+              </div>
+              <span className="document-ruler__unit">cm</span>
+            </div>
+          )}
+          <div className="document-editor__page-wrapper">
+            <div className="document-editor__page">
+              <div
+                ref={editorRef}
+                className="document-editor__canvas"
+                contentEditable
+                suppressContentEditableWarning
+                onInput={handleInput}
+                onPaste={handlePaste}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       <aside className="document-help">

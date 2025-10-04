@@ -1,8 +1,18 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { formatBytes, formatDate, isAnimatedImage, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
+import {
+  formatBytes,
+  formatDate,
+  isAnimatedImage,
+  isAudio,
+  isDocx,
+  isImage,
+  isPdf,
+  isVideo,
+} from "@/lib/file-utils";
 
 export type GalleryFile = {
   id: string;
@@ -27,7 +37,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "images", label: "Images" },
   { value: "videos", label: "Videos" },
   { value: "audio", label: "Audio" },
-  { value: "documents", label: "PDFs" },
+  { value: "documents", label: "Documents" },
   { value: "other", label: "Other" },
 ];
 
@@ -40,7 +50,7 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
     case "audio":
       return isAudio(file.mime);
     case "documents":
-      return isPdf(file.mime);
+      return isPdf(file.mime) || isDocx(file.mime, file.filename);
     case "other":
       return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime);
     default:
@@ -50,6 +60,29 @@ function matchesFilter(file: GalleryFile, filter: Filter): boolean {
 
 function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => void }) {
   const imageStyles = { width: "100%", height: "auto", borderRadius: 8, cursor: onClick ? "pointer" : "default" } as const;
+
+  if (isDocx(file.mime, file.filename)) {
+    return (
+      <div
+        style={{
+          display: "grid",
+          placeItems: "center",
+          gap: 8,
+          padding: 24,
+          background: "#fafafa",
+          border: "1px dashed #ddd",
+          borderRadius: 8,
+          cursor: onClick ? "pointer" : "default",
+        }}
+        onClick={onClick}
+      >
+        <span role="img" aria-hidden={true} style={{ fontSize: 32 }}>
+          📄
+        </span>
+        <span style={{ fontSize: 14, color: "#555", textAlign: "center" }}>Open in Document studio</span>
+      </div>
+    );
+  }
 
   if (!file._url) {
     return (
@@ -120,6 +153,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const router = useRouter();
 
   const filteredFiles = useMemo(() => {
     return files.filter((file) => {
@@ -131,7 +165,8 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
   }, [files, filter, search]);
 
   const firstViewableIndex = useMemo(
-    () => filteredFiles.findIndex((file) => Boolean(file._url)),
+    () =>
+      filteredFiles.findIndex((file) => Boolean(file._url) && !isDocx(file.mime, file.filename)),
     [filteredFiles]
   );
   const hasViewableFiles = firstViewableIndex !== -1;
@@ -255,12 +290,27 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
           }}
         >
           {filteredFiles.map((file, index) => {
-            const canView = Boolean(file._url);
+            const isDocumentFile = isDocx(file.mime, file.filename);
+            const canPreview = Boolean(file._url) && !isDocumentFile;
+
+            const handleOpen = () => {
+              if (isDocumentFile) {
+                setIsPlaying(false);
+                setActiveIndex(null);
+                router.push(`/documents?file=${file.id}`);
+                return;
+              }
+
+              if (!canPreview) return;
+
+              setIsPlaying(false);
+              setActiveIndex(index);
+            };
 
             return (
-            <div
-              key={file.id}
-              style={{
+              <div
+                key={file.id}
+                style={{
                 border: "1px solid #eee",
                 borderRadius: 10,
                 padding: 12,
@@ -268,18 +318,8 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
                 gap: 8,
                 boxShadow: "0 1px 2px rgba(15,23,42,0.08)",
               }}
-            >
-              <MediaPreview
-                file={file}
-                onClick={
-                  canView
-                    ? () => {
-                        setIsPlaying(false);
-                        setActiveIndex(index);
-                      }
-                    : undefined
-                }
-              />
+              >
+              <MediaPreview file={file} onClick={handleOpen} />
               <div style={{ display: "grid", gap: 4 }}>
                 <strong style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {file.filename}
@@ -290,24 +330,20 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                 <button
-                  onClick={() => {
-                    if (!canView) return;
-                    setIsPlaying(false);
-                    setActiveIndex(index);
-                  }}
-                  disabled={!canView}
+                  onClick={handleOpen}
+                  disabled={!canPreview && !isDocumentFile}
                   style={{
                     padding: "4px 10px",
                     borderRadius: 6,
                     border: "1px solid #1a73e8",
-                    background: canView ? "#1a73e8" : "#e0e0e0",
-                    color: canView ? "#fff" : "#777",
-                    cursor: canView ? "pointer" : "not-allowed",
+                    background: canPreview || isDocumentFile ? "#1a73e8" : "#e0e0e0",
+                    color: canPreview || isDocumentFile ? "#fff" : "#777",
+                    cursor: canPreview || isDocumentFile ? "pointer" : "not-allowed",
                   }}
                 >
-                  View
+                  {isDocumentFile ? "Open" : "View"}
                 </button>
-                {canView ? (
+                {file._url ? (
                   <a href={file._url ?? undefined} download style={{ fontSize: 12, color: "#1a73e8" }}>
                     Download
                   </a>

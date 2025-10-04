@@ -3,7 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatBytes, formatDate, isAnimatedImage, isAudio, isImage, isPdf, isVideo } from "@/lib/file-utils";
+import {
+  formatBytes,
+  formatDate,
+  isAnimatedImage,
+  isAudio,
+  isDocx,
+  isImage,
+  isPdf,
+  isVideo,
+} from "@/lib/file-utils";
 
 type LibraryFileItem = {
   kind: "file";
@@ -43,7 +52,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "images", label: "Images" },
   { value: "videos", label: "Videos" },
   { value: "audio", label: "Audio" },
-  { value: "documents", label: "PDFs" },
+  { value: "documents", label: "Documents" },
   { value: "other", label: "Other" },
   { value: "galleries", label: "Folders" },
 ];
@@ -65,7 +74,7 @@ function matchesFilter(file: LibraryFileItem, filter: Filter): boolean {
     case "audio":
       return isAudio(file.mime);
     case "documents":
-      return isPdf(file.mime);
+      return isPdf(file.mime) || isDocx(file.mime, file.filename);
     case "other":
       return !isImage(file.mime) && !isVideo(file.mime) && !isAudio(file.mime) && !isPdf(file.mime);
     default:
@@ -447,6 +456,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
           filteredItems.map((item) => {
             if (isFileItem(item)) {
               const isSelected = selectedIds.has(item.id);
+              const isDocumentFile = isDocx(item.mime, item.filename);
               return (
                 <label
                   key={item.id}
@@ -514,9 +524,25 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
                     <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{item.mime}</span>
                     <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatBytes(item.bytes)}</span>
                     <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>{formatDate(item.createdAt)}</span>
-                    <a href={item.url} download style={{ fontSize: 12, color: "var(--drive-accent)" }}>
-                      Download
-                    </a>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {isDocumentFile && (
+                        <Link
+                          href={`/documents?file=${item.id}`}
+                          style={{ fontSize: 12, color: "var(--drive-accent)" }}
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          Open in Document studio
+                        </Link>
+                      )}
+                      <a
+                        href={item.url}
+                        download
+                        style={{ fontSize: 12, color: "var(--drive-accent)" }}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        Download
+                      </a>
+                    </div>
                   </div>
                 </label>
               );
