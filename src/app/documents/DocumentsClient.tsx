@@ -605,8 +605,10 @@ export default function DocumentsClient({
       if (!page) continue;
 
       const nextPage = pages[index + 1] ?? null;
+      const pageClientHeight = page.clientHeight;
+      const maxHeight = Number.isFinite(pageClientHeight) && pageClientHeight > 0 ? pageClientHeight : pageHeightPx;
 
-      while (page.scrollHeight > pageHeightPx && nextPage) {
+      while (page.scrollHeight > maxHeight && nextPage) {
         const childNodes = Array.from(page.childNodes);
         const nodeToMove = childNodes.pop();
         if (!nodeToMove) break;
@@ -615,7 +617,7 @@ export default function DocumentsClient({
         needsAnotherPass = true;
       }
 
-      if (page.scrollHeight > pageHeightPx && !nextPage) {
+      if (page.scrollHeight > maxHeight && !nextPage) {
         setPageCount((current) => current + 1);
         needsAnotherPass = true;
         return;
@@ -625,13 +627,13 @@ export default function DocumentsClient({
         continue;
       }
 
-      while (page.scrollHeight < pageHeightPx && nextPage.childNodes.length > 0) {
+      while (page.scrollHeight < maxHeight && nextPage.childNodes.length > 0) {
         const nodeToMove = nextPage.firstChild;
         if (!nodeToMove) break;
 
         page.appendChild(nodeToMove);
 
-        if (page.scrollHeight > pageHeightPx) {
+        if (page.scrollHeight > maxHeight) {
           nextPage.insertBefore(nodeToMove, nextPage.firstChild);
           break;
         }
