@@ -33,28 +33,158 @@ const allowedTags = new Set([
   "blockquote",
   "br",
   "code",
+  "col",
+  "colgroup",
   "div",
   "em",
+  "article",
+  "aside",
+  "figure",
+  "figcaption",
+  "caption",
   "h1",
   "h2",
   "h3",
   "h4",
   "h5",
   "h6",
+  "header",
+  "footer",
   "hr",
   "i",
+  "img",
   "li",
+  "main",
+  "nav",
   "ol",
   "p",
   "pre",
   "s",
+  "section",
   "span",
   "strong",
   "sub",
   "sup",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
   "u",
   "ul",
 ]);
+
+const allowedGlobalAttributes = new Set(["style", "class", "title", "id", "role"]);
+
+const allowedAttributesByTag: Record<string, ReadonlySet<string>> = {
+  img: new Set(["src", "alt", "title", "width", "height", "loading"]),
+  table: new Set(["border", "cellpadding", "cellspacing", "summary"]),
+  th: new Set(["colspan", "rowspan", "scope", "abbr", "align"]),
+  td: new Set(["colspan", "rowspan", "headers", "align", "valign"]),
+  col: new Set(["span", "width"]),
+  colgroup: new Set(["span", "width"]),
+  ol: new Set(["type", "start", "reversed"]),
+  ul: new Set(["type"]),
+  li: new Set(["value"]),
+};
+
+const allowedStyleProperties = new Set([
+  "background",
+  "background-color",
+  "border",
+  "border-bottom",
+  "border-bottom-color",
+  "border-bottom-style",
+  "border-bottom-width",
+  "border-collapse",
+  "border-color",
+  "border-left",
+  "border-left-color",
+  "border-left-style",
+  "border-left-width",
+  "border-right",
+  "border-right-color",
+  "border-right-style",
+  "border-right-width",
+  "border-spacing",
+  "border-style",
+  "border-top",
+  "border-top-color",
+  "border-top-style",
+  "border-top-width",
+  "border-width",
+  "box-sizing",
+  "caption-side",
+  "color",
+  "display",
+  "float",
+  "font-family",
+  "font-size",
+  "font-style",
+  "font-weight",
+  "height",
+  "letter-spacing",
+  "line-height",
+  "list-style-image",
+  "list-style-position",
+  "list-style-type",
+  "margin",
+  "margin-bottom",
+  "margin-left",
+  "margin-right",
+  "margin-top",
+  "max-height",
+  "max-width",
+  "min-height",
+  "min-width",
+  "opacity",
+  "overflow",
+  "overflow-x",
+  "overflow-y",
+  "padding",
+  "padding-bottom",
+  "padding-left",
+  "padding-right",
+  "padding-top",
+  "table-layout",
+  "text-align",
+  "text-decoration",
+  "text-indent",
+  "text-transform",
+  "vertical-align",
+  "white-space",
+  "width",
+  "word-spacing",
+]);
+
+function isAllowedAttribute(tag: string, attribute: string) {
+  if (allowedGlobalAttributes.has(attribute)) return true;
+  const allowedForTag = allowedAttributesByTag[tag];
+  return allowedForTag?.has(attribute) ?? false;
+}
+
+function sanitizeStyleValue(rule: string) {
+  const [propertyRaw, ...rest] = rule.split(":");
+  if (!propertyRaw || rest.length === 0) return null;
+
+  const property = propertyRaw.trim().toLowerCase();
+  if (!allowedStyleProperties.has(property)) return null;
+
+  const value = rest.join(":").trim();
+  if (!value) return null;
+
+  if (/expression\s*\(|javascript:/i.test(value)) {
+    return null;
+  }
+
+  if (property === "background" && /url\s*\(/i.test(value)) {
+    return null;
+  }
+
+  return `${property}: ${value}`;
+}
 
 function sanitizeHtml(html: string) {
   const parser = new DOMParser();
@@ -91,31 +221,31 @@ function sanitizeHtml(html: string) {
       continue;
     }
 
+    if (tag === "img") {
+      const src = el.getAttribute("src") ?? "";
+      if (!src || !/^(data:|https?:|blob:)/i.test(src)) {
+        el.remove();
+        continue;
+      }
+    }
+
     Array.from(el.attributes).forEach((attr) => {
-      if (attr.name.startsWith("data-")) return;
+      if (attr.name.startsWith("data-") || attr.name.startsWith("aria-")) return;
 
       if (attr.name === "style") {
         const styles = attr.value
           .split(";")
           .map((s) => s.trim())
           .filter(Boolean)
-          .filter((rule) => {
-            const [prop] = rule.split(":");
-            const allowedProps = [
-              "text-align",
-              "font-weight",
-              "font-style",
-              "text-decoration",
-            ];
-            return allowedProps.includes(prop.trim());
-          });
+          .map(sanitizeStyleValue)
+          .filter((value): value is string => Boolean(value));
 
         if (styles.length) {
-          el.setAttribute("style", styles.join(";"));
+          el.setAttribute("style", styles.join("; "));
         } else {
           el.removeAttribute("style");
         }
-      } else {
+      } else if (!isAllowedAttribute(tag, attr.name)) {
         el.removeAttribute(attr.name);
       }
     });
