@@ -353,6 +353,63 @@ function buildDocxHtml(content: string, title: string) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>${safeTitle}</title></head><body>${content}</body></html>`;
 }
 
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Unexpected FileReader result type"));
+      }
+    };
+    reader.onerror = () => {
+      reject(reader.error ?? new Error("Unable to read blob"));
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function inlineBlobImages(html: string) {
+  if (typeof window === "undefined" || !html.includes("blob:")) {
+    return html;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const images = Array.from(doc.querySelectorAll("img"));
+
+  await Promise.all(
+    images.map(async (img) => {
+      const src = img.getAttribute("src") ?? "";
+      if (!src.startsWith("blob:")) {
+        return;
+      }
+
+      try {
+        const response = await fetch(src);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blob URL (${response.status})`);
+        }
+
+        const blob = await response.blob();
+        if (!blob.type || !blob.type.startsWith("image/")) {
+          img.remove();
+          return;
+        }
+
+        const dataUrl = await blobToDataUrl(blob);
+        img.setAttribute("src", dataUrl);
+      } catch (error) {
+        console.error("Failed to inline blob image for DOCX export", error);
+        img.remove();
+      }
+    }),
+  );
+
+  return doc.body.innerHTML || "";
+}
+
 function createDocxBlob(output: unknown) {
   if (output instanceof Blob) {
     return output;
@@ -662,7 +719,8 @@ export default function DocumentsClient({
   const createDocxArtifact = useCallback(async () => {
     const trimmedTitle = documentTitle?.trim();
     const docTitle = trimmedTitle || DEFAULT_DOCUMENT_TITLE;
-    const html = buildDocxHtml(contentHtml, docTitle);
+    const contentWithInlinedImages = await inlineBlobImages(contentHtml);
+    const html = buildDocxHtml(contentWithInlinedImages, docTitle);
     const lang = document.documentElement.lang?.trim();
     const docxOutput = await htmlToDocx(html, undefined, {
       title: docTitle,
