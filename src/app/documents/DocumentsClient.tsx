@@ -32,7 +32,15 @@ const DEFAULT_DOCUMENT_TITLE = "Untitled document";
 const DEFAULT_DOCUMENT_HTML =
   '<p class="doc-placeholder">Start typing or import a document to begin.</p>';
 
-const DEFAULT_PAGE_SIZE = { label: "A4", widthMm: 210, heightMm: 297 } as const;
+const PAGE_SIZES = [
+  { id: "a4", label: "A4", widthMm: 210, heightMm: 297 },
+  { id: "letter", label: "Letter", widthMm: 215.9, heightMm: 279.4 },
+  { id: "legal", label: "Legal", widthMm: 215.9, heightMm: 355.6 },
+] as const;
+
+const DEFAULT_PAGE_SIZE = PAGE_SIZES[0];
+
+const PAGE_GAP_PX = 48;
 
 const MM_PER_INCH = 25.4;
 const SCREEN_DPI = 96;
@@ -531,9 +539,15 @@ export default function DocumentsClient({
   const [highlightColor, setHighlightColor] = useState(DEFAULT_HIGHLIGHT_COLOR);
   const [showRuler, setShowRuler] = useState(false);
   const [pageScale, setPageScale] = useState(1);
+  const [pageSizeId, setPageSizeId] = useState<(typeof PAGE_SIZES)[number]["id"]>(DEFAULT_PAGE_SIZE.id);
+  const pageSize = useMemo(
+    () => PAGE_SIZES.find((size) => size.id === pageSizeId) ?? DEFAULT_PAGE_SIZE,
+    [pageSizeId],
+  );
+  const [pageCount, setPageCount] = useState(1);
 
-  const pageWidthPx = useMemo(() => mmToPx(DEFAULT_PAGE_SIZE.widthMm), []);
-  const pageHeightPx = useMemo(() => mmToPx(DEFAULT_PAGE_SIZE.heightMm), []);
+  const pageWidthPx = useMemo(() => mmToPx(pageSize.widthMm), [pageSize.widthMm]);
+  const pageHeightPx = useMemo(() => mmToPx(pageSize.heightMm), [pageSize.heightMm]);
   const workspaceStyle = useMemo(
     () =>
       ({
@@ -542,13 +556,16 @@ export default function DocumentsClient({
         "--document-page-scale": pageScale.toString(),
         "--document-page-width-scaled": `${pageWidthPx * pageScale}px`,
         "--document-page-height-scaled": `${pageHeightPx * pageScale}px`,
+        "--document-page-count": pageCount.toString(),
+        "--document-page-gap": `${PAGE_GAP_PX}px`,
+        "--document-page-gap-scaled": `${PAGE_GAP_PX * pageScale}px`,
       }) as CSSProperties,
-    [pageWidthPx, pageHeightPx, pageScale],
+    [pageWidthPx, pageHeightPx, pageScale, pageCount],
   );
 
   const rulerMarks = useMemo(
     () => {
-      const totalWidthMm = DEFAULT_PAGE_SIZE.widthMm;
+      const totalWidthMm = pageSize.widthMm;
       const marks: Array<{ key: string; position: number; label?: string; type: "major" | "mid" }> = [];
       const totalCentimetres = Math.round(totalWidthMm / 10);
 
@@ -564,8 +581,41 @@ export default function DocumentsClient({
 
       return marks;
     },
-    [],
+    [pageSize.widthMm],
   );
+
+  const recalculatePageCount = useCallback(() => {
+    if (!editorRef.current) return;
+
+    const element = editorRef.current;
+    const height = element.scrollHeight;
+
+    if (!Number.isFinite(height) || !Number.isFinite(pageHeightPx) || pageHeightPx <= 0) {
+      setPageCount(1);
+      return;
+    }
+
+    const pagesNeeded = Math.max(1, Math.ceil(height / pageHeightPx));
+    setPageCount((current) => (current === pagesNeeded ? current : pagesNeeded));
+  }, [pageHeightPx]);
+
+  useEffect(() => {
+    recalculatePageCount();
+  }, [recalculatePageCount, contentHtml, pageHeightPx]);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (typeof ResizeObserver === "undefined") return;
+
+    const element = editorRef.current;
+    const observer = new ResizeObserver(() => {
+      recalculatePageCount();
+    });
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [recalculatePageCount]);
 
   useEffect(() => {
     if (!editorContainerRef.current) return;
@@ -906,6 +956,10 @@ export default function DocumentsClient({
     applyCommand("removeFormat");
   }, [applyCommand]);
 
+  const handlePageSizeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    setPageSizeId(event.target.value as (typeof PAGE_SIZES)[number]["id"]);
+  }, []);
+
   const handleFontFamilyChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       const value = event.target.value;
@@ -1023,9 +1077,16 @@ export default function DocumentsClient({
         </label>
 
         <div className="document-controls__options">
-          <span className="document-controls__page-size">
-            Page size: {DEFAULT_PAGE_SIZE.label} ({DEFAULT_PAGE_SIZE.widthMm} × {DEFAULT_PAGE_SIZE.heightMm} mm)
-          </span>
+          <label className="document-controls__page-size">
+            <span>Page size</span>
+            <select value={pageSizeId} onChange={handlePageSizeChange}>
+              {PAGE_SIZES.map((size) => (
+                <option key={size.id} value={size.id}>
+                  {size.label} ({size.widthMm.toFixed(1).replace(/\.0$/, "")} × {size.heightMm.toFixed(1).replace(/\.0$/, "")} mm)
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
             className="drive-button-ghost"
@@ -1108,6 +1169,17 @@ export default function DocumentsClient({
           )}
           <div className="document-editor__page-wrapper">
             <div className="document-editor__page">
+              <div className="document-editor__page-backgrounds" aria-hidden="true">
+                {Array.from({ length: pageCount }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="document-editor__page-background"
+                    style={{
+                      top: `calc(${index} * (var(--document-page-height) + var(--document-page-gap)))`,
+                    }}
+                  />
+                ))}
+              </div>
               <div
                 ref={editorRef}
                 className="document-editor__canvas"
