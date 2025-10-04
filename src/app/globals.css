@@ -2101,7 +2101,7 @@ body.landing-active .drive-main {
   );
   width: 100%;
   display: block;
-  padding: 1.25rem 1.5rem;
+  padding: 0;
   box-sizing: border-box;
   line-height: 1.7;
   font-size: 1rem;
@@ -2114,6 +2114,31 @@ body.landing-active .drive-main {
 }
 
 .document-editor__canvas:focus-visible {
+  outline: none;
+}
+
+.document-editor__page-content {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: var(--document-page-height);
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
+  background: transparent;
+  color: inherit;
+  line-height: inherit;
+  font-size: inherit;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  outline: none;
+}
+
+.document-editor__page-content + .document-editor__page-content {
+  margin-top: var(--document-page-gap);
+}
+
+.document-editor__page-content:focus-visible {
   outline: none;
 }
 

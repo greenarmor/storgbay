@@ -526,6 +526,7 @@ export default function DocumentsClient({
   initialStatus = null,
 }: DocumentsClientProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLElement | null>(null);
   const lastLoadedDocumentId = useRef<string | null>(null);
@@ -585,27 +586,76 @@ export default function DocumentsClient({
   );
 
   const recalculatePageCount = useCallback(() => {
-    if (!editorRef.current) return;
-
-    const element = editorRef.current;
-    const height = element.scrollHeight;
-
-    if (!Number.isFinite(height) || !Number.isFinite(pageHeightPx) || pageHeightPx <= 0) {
+    if (!Number.isFinite(pageHeightPx) || pageHeightPx <= 0) {
       setPageCount(1);
       return;
     }
 
-    let effectiveHeight = height;
+    const pages = pageRefs.current.filter((page): page is HTMLDivElement => Boolean(page));
 
-    if (typeof window !== "undefined") {
-      const styles = window.getComputedStyle(element);
-      const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
-      const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
-      effectiveHeight = Math.max(0, height - paddingTop - paddingBottom);
+    if (pages.length === 0) {
+      setPageCount(1);
+      return;
     }
 
-    const pagesNeeded = Math.max(1, Math.ceil(effectiveHeight / pageHeightPx));
+    let needsAnotherPass = false;
+
+    for (let index = 0; index < pages.length; index += 1) {
+      const page = pages[index];
+      if (!page) continue;
+
+      const nextPage = pages[index + 1] ?? null;
+
+      while (page.scrollHeight > pageHeightPx && nextPage) {
+        const childNodes = Array.from(page.childNodes);
+        const nodeToMove = childNodes.pop();
+        if (!nodeToMove) break;
+
+        nextPage.insertBefore(nodeToMove, nextPage.firstChild);
+        needsAnotherPass = true;
+      }
+
+      if (page.scrollHeight > pageHeightPx && !nextPage) {
+        setPageCount((current) => current + 1);
+        needsAnotherPass = true;
+        return;
+      }
+
+      if (!nextPage) {
+        continue;
+      }
+
+      while (page.scrollHeight < pageHeightPx && nextPage.childNodes.length > 0) {
+        const nodeToMove = nextPage.firstChild;
+        if (!nodeToMove) break;
+
+        page.appendChild(nodeToMove);
+
+        if (page.scrollHeight > pageHeightPx) {
+          nextPage.insertBefore(nodeToMove, nextPage.firstChild);
+          break;
+        }
+
+        needsAnotherPass = true;
+      }
+    }
+
+    let lastIndexWithContent = -1;
+
+    pages.forEach((page, index) => {
+      if (page.innerHTML.trim()) {
+        lastIndexWithContent = index;
+      }
+    });
+
+    const pagesNeeded = Math.max(1, lastIndexWithContent + 1);
     setPageCount((current) => (current === pagesNeeded ? current : pagesNeeded));
+
+    if (needsAnotherPass && typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        recalculatePageCount();
+      });
+    }
   }, [pageHeightPx]);
 
   const schedulePageCountRecalculation = useCallback(() => {
@@ -618,7 +668,7 @@ export default function DocumentsClient({
 
   useEffect(() => {
     recalculatePageCount();
-  }, [recalculatePageCount, contentHtml, pageHeightPx]);
+  }, [recalculatePageCount, contentHtml, pageHeightPx, pageCount]);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -670,19 +720,32 @@ export default function DocumentsClient({
   }, []);
 
   useEffect(() => {
-    if (!editorRef.current) return;
     const sanitized = sanitizeHtml(contentHtml);
+    const pages = pageRefs.current.filter((page): page is HTMLDivElement => Boolean(page));
 
-    if (editorRef.current.innerHTML !== sanitized) {
-      editorRef.current.innerHTML = sanitized;
+    if (pages.length === 0) return;
+
+    const existing = pages.map((page) => page.innerHTML).join("");
+
+    if (existing !== sanitized) {
+      pages.forEach((page, index) => {
+        if (index === 0) {
+          page.innerHTML = sanitized;
+        } else {
+          page.innerHTML = "";
+        }
+      });
     }
 
     schedulePageCountRecalculation();
   }, [contentHtml, schedulePageCountRecalculation]);
 
   const updateContentFromEditor = useCallback(() => {
-    if (!editorRef.current) return;
-    const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+    const pages = pageRefs.current.filter((page): page is HTMLDivElement => Boolean(page));
+    if (pages.length === 0) return;
+
+    const combinedHtml = pages.map((page) => page.innerHTML).join("");
+    const sanitized = sanitizeHtml(combinedHtml);
     setContentHtml(sanitized || "<p><br/></p>");
   }, []);
 
@@ -794,7 +857,8 @@ export default function DocumentsClient({
   }, [handleImport]);
 
   const focusEditor = useCallback(() => {
-    editorRef.current?.focus();
+    const [firstPage] = pageRefs.current.filter((page): page is HTMLDivElement => Boolean(page));
+    firstPage?.focus();
   }, []);
 
   useEffect(() => {
@@ -1208,16 +1272,24 @@ export default function DocumentsClient({
                   />
                 ))}
               </div>
-              <div
-                ref={editorRef}
-                className="document-editor__canvas"
-                contentEditable
-                suppressContentEditableWarning
-                onInput={handleInput}
-                onPaste={handlePaste}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              />
+              <div ref={editorRef} className="document-editor__canvas">
+                {Array.from({ length: pageCount }).map((_, index) => (
+                  <div
+                    key={index}
+                    ref={(element) => {
+                      pageRefs.current[index] = element;
+                    }}
+                    className="document-editor__page-content"
+                    contentEditable
+                    suppressContentEditableWarning
+                    style={{ height: `${pageHeightPx}px` }}
+                    onInput={handleInput}
+                    onPaste={handlePaste}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
