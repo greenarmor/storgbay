@@ -378,6 +378,72 @@ function plainTextToHtml(input: string) {
   return paragraphs.join("");
 }
 
+type PageMeasurementOptions = {
+  pageWidth: number;
+  pageHeight: number;
+  referenceElement?: HTMLElement | null;
+};
+
+function estimateHtmlPageCount(html: string, options: PageMeasurementOptions) {
+  if (typeof document === "undefined") {
+    return 1;
+  }
+
+  const { pageWidth, pageHeight, referenceElement } = options;
+
+  if (!Number.isFinite(pageWidth) || !Number.isFinite(pageHeight) || pageWidth <= 0 || pageHeight <= 0) {
+    return 1;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "document-editor__canvas";
+  wrapper.style.position = "fixed";
+  wrapper.style.left = "-10000px";
+  wrapper.style.top = "-10000px";
+  wrapper.style.visibility = "hidden";
+  wrapper.style.pointerEvents = "none";
+  wrapper.style.overflow = "visible";
+  wrapper.style.width = `${pageWidth}px`;
+  wrapper.style.setProperty("--document-page-height", `${pageHeight}px`);
+  wrapper.style.setProperty("--document-page-width", `${pageWidth}px`);
+  wrapper.style.setProperty("--document-page-gap", `${PAGE_GAP_PX}px`);
+  wrapper.style.setProperty("--document-page-count", "1");
+
+  const page = document.createElement("div");
+  page.className = "document-editor__page-content";
+  page.style.height = "auto";
+  page.style.minHeight = `${pageHeight}px`;
+  page.style.maxHeight = "none";
+  page.style.overflow = "visible";
+
+  if (referenceElement) {
+    const computed = window.getComputedStyle(referenceElement);
+    page.style.fontFamily = computed.fontFamily;
+    page.style.fontSize = computed.fontSize;
+    page.style.lineHeight = computed.lineHeight;
+    page.style.color = computed.color;
+  }
+
+  page.innerHTML = html;
+  wrapper.appendChild(page);
+  document.body.appendChild(wrapper);
+
+  const totalHeight = page.scrollHeight;
+
+  document.body.removeChild(wrapper);
+
+  if (!Number.isFinite(totalHeight) || totalHeight <= 0) {
+    return 1;
+  }
+
+  const estimatedPages = Math.ceil(totalHeight / pageHeight);
+  if (!Number.isFinite(estimatedPages) || estimatedPages <= 0) {
+    return 1;
+  }
+
+  return estimatedPages;
+}
+
 function detectImport(file: File): ImportOption {
   const name = file.name.toLowerCase();
   const type = file.type?.toLowerCase() ?? "";
@@ -530,6 +596,9 @@ export default function DocumentsClient({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLElement | null>(null);
   const lastLoadedDocumentId = useRef<string | null>(null);
+  const importedContentRef = useRef<string | null>(null);
+  const overflowSignatureRef = useRef<string | null>(null);
+  const overflowAttemptRef = useRef(0);
   const [documentTitle, setDocumentTitle] = useState(DEFAULT_DOCUMENT_TITLE);
   const [contentHtml, setContentHtml] = useState(DEFAULT_DOCUMENT_HTML);
   const [status, setStatus] = useState<StatusMessage | null>(initialStatus ?? null);
@@ -549,6 +618,10 @@ export default function DocumentsClient({
 
   const pageWidthPx = useMemo(() => mmToPx(pageSize.widthMm), [pageSize.widthMm]);
   const pageHeightPx = useMemo(() => mmToPx(pageSize.heightMm), [pageSize.heightMm]);
+  const resetOverflowDetection = useCallback(() => {
+    overflowSignatureRef.current = null;
+    overflowAttemptRef.current = 0;
+  }, []);
   const workspaceStyle = useMemo(
     () =>
       ({
@@ -585,6 +658,23 @@ export default function DocumentsClient({
     [pageSize.widthMm],
   );
 
+  const applyImportedPageEstimate = useCallback(
+    (html: string) => {
+      const normalizedHtml = html || DEFAULT_DOCUMENT_HTML;
+      const estimatedPages = estimateHtmlPageCount(normalizedHtml, {
+        pageWidth: pageWidthPx,
+        pageHeight: pageHeightPx,
+        referenceElement: editorRef.current,
+      });
+
+      const pages = Math.max(1, Number.isFinite(estimatedPages) ? estimatedPages : 1);
+      resetOverflowDetection();
+      setPageCount((current) => (current === pages ? current : pages));
+      return pages;
+    },
+    [pageHeightPx, pageWidthPx, resetOverflowDetection],
+  );
+
   const recalculatePageCount = useCallback(() => {
     if (!Number.isFinite(pageHeightPx) || pageHeightPx <= 0) {
       setPageCount(1);
@@ -618,6 +708,29 @@ export default function DocumentsClient({
       }
 
       if (page.scrollHeight > maxHeight && !nextPage) {
+        const signature = page.innerHTML;
+        if (overflowSignatureRef.current === signature) {
+          overflowAttemptRef.current += 1;
+        } else {
+          overflowSignatureRef.current = signature;
+          overflowAttemptRef.current = 1;
+        }
+
+        if (overflowAttemptRef.current >= 3) {
+          setStatus((current) => {
+            if (current?.tone === "error") {
+              return current;
+            }
+
+            return {
+              tone: "warning",
+              text:
+                "Some content is taller than the current page and may overflow. Try adjusting the page size or editing the content.",
+            };
+          });
+          return;
+        }
+
         setPageCount((current) => current + 1);
         needsAnotherPass = true;
         return;
@@ -653,12 +766,14 @@ export default function DocumentsClient({
     const pagesNeeded = Math.max(1, lastIndexWithContent + 1);
     setPageCount((current) => (current === pagesNeeded ? current : pagesNeeded));
 
+    resetOverflowDetection();
+
     if (needsAnotherPass && typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
         recalculatePageCount();
       });
     }
-  }, [pageHeightPx]);
+  }, [pageHeightPx, resetOverflowDetection]);
 
   const schedulePageCountRecalculation = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -667,6 +782,11 @@ export default function DocumentsClient({
       recalculatePageCount();
     });
   }, [recalculatePageCount]);
+
+  useEffect(() => {
+    if (!importedContentRef.current) return;
+    applyImportedPageEstimate(importedContentRef.current);
+  }, [applyImportedPageEstimate]);
 
   useEffect(() => {
     recalculatePageCount();
@@ -748,8 +868,10 @@ export default function DocumentsClient({
 
     const combinedHtml = pages.map((page) => page.innerHTML).join("");
     const sanitized = sanitizeHtml(combinedHtml);
+    importedContentRef.current = null;
+    resetOverflowDetection();
     setContentHtml(sanitized || "<p><br/></p>");
-  }, []);
+  }, [resetOverflowDetection]);
 
   const handleInput = useCallback(() => {
     updateContentFromEditor();
@@ -780,27 +902,42 @@ export default function DocumentsClient({
           const arrayBuffer = await file.arrayBuffer();
           const { value } = await mammoth.convertToHtml({ arrayBuffer });
           const sanitized = sanitizeHtml(value);
-          setContentHtml(sanitized || DEFAULT_DOCUMENT_HTML);
+          const normalizedHtml = sanitized || DEFAULT_DOCUMENT_HTML;
+          importedContentRef.current = normalizedHtml;
+          const pages = applyImportedPageEstimate(normalizedHtml);
+          setContentHtml(normalizedHtml);
           setDocumentTitle(file.name.replace(/\.docx$/i, ""));
-          setStatus({ tone: "success", text: `Imported ${file.name}.` });
+          const pageLabel = pages === 1 ? "page" : "pages";
+          setStatus({ tone: "success", text: `Imported ${file.name} (${pages} ${pageLabel}).` });
           schedulePageCountRecalculation();
           break;
         }
         case "html": {
           const text = await file.text();
           const sanitized = sanitizeHtml(text);
-          setContentHtml(sanitized || DEFAULT_DOCUMENT_HTML);
+          const normalizedHtml = sanitized || DEFAULT_DOCUMENT_HTML;
+          importedContentRef.current = normalizedHtml;
+          const pages = applyImportedPageEstimate(normalizedHtml);
+          setContentHtml(normalizedHtml);
           setDocumentTitle(file.name.replace(/\.html?$/i, ""));
-          setStatus({ tone: "success", text: `Imported ${file.name}.` });
+          const pageLabel = pages === 1 ? "page" : "pages";
+          setStatus({ tone: "success", text: `Imported ${file.name} (${pages} ${pageLabel}).` });
           schedulePageCountRecalculation();
           break;
         }
         case "text": {
           const text = await file.text();
           const html = plainTextToHtml(text);
-          setContentHtml(html || DEFAULT_DOCUMENT_HTML);
+          const normalizedHtml = html || DEFAULT_DOCUMENT_HTML;
+          importedContentRef.current = normalizedHtml;
+          const pages = applyImportedPageEstimate(normalizedHtml);
+          setContentHtml(normalizedHtml);
           setDocumentTitle(file.name.replace(/\.[^.]+$/, ""));
-          setStatus({ tone: "success", text: `Converted ${file.name} to a rich text document.` });
+          const pageLabel = pages === 1 ? "page" : "pages";
+          setStatus({
+            tone: "success",
+            text: `Converted ${file.name} to a rich text document (${pages} ${pageLabel}).`,
+          });
           schedulePageCountRecalculation();
           break;
         }
@@ -843,7 +980,7 @@ export default function DocumentsClient({
         text: error instanceof Error ? error.message : "Failed to import document.",
       });
     }
-  }, [schedulePageCountRecalculation]);
+  }, [applyImportedPageEstimate, schedulePageCountRecalculation]);
 
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -922,12 +1059,14 @@ export default function DocumentsClient({
   );
 
   const handleNewDocument = useCallback(() => {
+    importedContentRef.current = null;
+    resetOverflowDetection();
     setDocumentTitle(DEFAULT_DOCUMENT_TITLE);
     setContentHtml(DEFAULT_DOCUMENT_HTML);
     setStatus({ tone: "info", text: "Started a fresh document." });
     focusEditor();
     schedulePageCountRecalculation();
-  }, [focusEditor, schedulePageCountRecalculation]);
+  }, [focusEditor, resetOverflowDetection, schedulePageCountRecalculation]);
 
   const createDocxArtifact = useCallback(async () => {
     const trimmedTitle = documentTitle?.trim();
