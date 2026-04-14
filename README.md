@@ -33,3 +33,4 @@ pnpm dev
 Open http://localhost:3000 and sign in at `/api/auth/signin` using the seeded admin env values.
 
 > To make galleries **private**, remove anonymous read from the bucket and the app will serve files via short-lived presigned GETs when a gallery is private.
+noting security fixes
