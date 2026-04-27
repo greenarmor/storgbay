@@ -1,11 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 
 export function UploadClient() {
   const [files, setFiles] = useState<File[]>([]);
+  const [galleries, setGalleries] = useState<Array<{ id: string; title: string; role: "OWNER" | "MANAGER" }>>([]);
+  const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
   const [status, setStatus] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [loadingGalleries, setLoadingGalleries] = useState(true);
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -18,8 +22,32 @@ export function UploadClient() {
     });
   }
 
+  async function loadGalleries() {
+    try {
+      setLoadingGalleries(true);
+      setError("");
+      const response = await fetch("/api/galleries?scope=mine", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Failed to load folders.");
+      }
+      const data: Array<{ id: string; title: string; role: "OWNER" | "MANAGER" }> = await response.json();
+      setGalleries(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load folders.";
+      setError(message);
+    } finally {
+      setLoadingGalleries(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadGalleries();
+  }, []);
+
   async function onUpload() {
     if (files.length === 0) return;
+    setStatus("");
+    setError("");
     for (const file of files) {
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -28,11 +56,12 @@ export function UploadClient() {
           filename: file.name,
           mime: file.type || "application/octet-stream",
           size: file.size,
+          galleryIds: selectedGalleryIds,
         }),
       });
       if (!response.ok) {
         const message = await response.text();
-        setStatus(message || "Failed to start upload.");
+        setError(message || "Failed to start upload.");
         return;
       }
       const { url } = await response.json();
@@ -43,12 +72,21 @@ export function UploadClient() {
         headers: { "Content-Type": file.type || "application/octet-stream" },
       });
       if (!uploadResponse.ok) {
-        setStatus(`Failed to upload ${file.name}.`);
+        setError(`Failed to upload ${file.name}.`);
         return;
       }
     }
-    setStatus("All uploads complete!");
+    setStatus(
+      selectedGalleryIds.length > 0
+        ? "All uploads complete and added to the selected folder(s)."
+        : "All uploads complete!"
+    );
     setFiles([]);
+  }
+
+  function onGallerySelectionChange(event: ChangeEvent<HTMLSelectElement>) {
+    const selected = Array.from(event.target.selectedOptions).map((option) => option.value);
+    setSelectedGalleryIds(selected);
   }
 
   function onFileInputChange(event: ChangeEvent<HTMLInputElement>) {
@@ -77,6 +115,30 @@ export function UploadClient() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <h2 className="text-2xl font-semibold">Upload files</h2>
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Add uploads to folder(s)</label>
+        <select
+          multiple
+          value={selectedGalleryIds}
+          onChange={onGallerySelectionChange}
+          className="w-full min-h-28 border border-gray-300 rounded-md p-2 text-sm"
+          disabled={loadingGalleries || galleries.length === 0}
+        >
+          {galleries.map((gallery) => (
+            <option key={gallery.id} value={gallery.id}>
+              {gallery.title}
+              {gallery.role === "MANAGER" ? " (Shared)" : ""}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-500">
+          {loadingGalleries
+            ? "Loading folders…"
+            : galleries.length === 0
+              ? "No folders available. You can still upload files."
+              : "Hold Ctrl (Windows) or Command (Mac) to choose multiple folders."}
+        </p>
+      </div>
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white"}`}
         onClick={() => fileInputRef.current?.click()}
@@ -103,7 +165,8 @@ export function UploadClient() {
       >
         Upload
       </button>
-      <p className="text-sm text-gray-700">{status}</p>
+      {error && <p className="text-sm text-red-700">{error}</p>}
+      {status && !error && <p className="text-sm text-gray-700">{status}</p>}
     </div>
   );
 }
