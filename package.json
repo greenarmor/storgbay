@@ -8,9 +8,9 @@
   "author": "Emmanuel Secretaria <hello@codesign.plus> (https://github.com/greenarmor)",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "prisma generate && next dev",
+    "dev": "prisma generate && next dev -p 3999",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "next start -p 3999",
     "lint": "next lint",
     "db:migrate": "prisma migrate dev --name init",
     "db:seed": "tsx prisma/seed.ts",
