@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   formatBytes,
   formatDate,
@@ -144,21 +144,74 @@ function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => vo
   );
 }
 
-export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files: GalleryFile[] }) {
+type GalleryViewerProps = {
+  gallery: GalleryInfo;
+  galleryId: string;
+  files: GalleryFile[];
+  hasMoreInitialItems: boolean;
+  initialCursor: string | null;
+  totalFileCount: number;
+};
+
+export function GalleryViewer({
+  gallery,
+  galleryId,
+  files,
+  hasMoreInitialItems,
+  initialCursor,
+  totalFileCount,
+}: GalleryViewerProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [loadedFiles, setLoadedFiles] = useState(files);
+  const [cursor, setCursor] = useState<string | null>(initialCursor);
+  const [hasMore, setHasMore] = useState(hasMoreInitialItems);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    setLoadedFiles(files);
+    setCursor(initialCursor);
+    setHasMore(hasMoreInitialItems);
+  }, [files, initialCursor, hasMoreInitialItems]);
+
+  const loadMoreFiles = useCallback(async () => {
+    if (!hasMore || isFetchingMore || !cursor) return;
+    setIsFetchingMore(true);
+
+    try {
+      const response = await fetch(`/api/galleries/${galleryId}/items?limit=24&cursor=${encodeURIComponent(cursor)}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load gallery items (${response.status})`);
+      }
+
+      const data = (await response.json()) as {
+        items: GalleryFile[];
+        nextCursor: string | null;
+        hasMore: boolean;
+      };
+
+      setLoadedFiles((current) => [...current, ...data.items]);
+      setCursor(data.nextCursor);
+      setHasMore(data.hasMore);
+    } catch (error) {
+      console.error("Could not load additional gallery items", error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  }, [cursor, galleryId, hasMore, isFetchingMore]);
+
   const filteredFiles = useMemo(() => {
-    return files.filter((file) => {
+    return loadedFiles.filter((file) => {
       if (search && !file.filename.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
       return matchesFilter(file, filter);
     });
-  }, [files, filter, search]);
+  }, [loadedFiles, filter, search]);
 
   const firstViewableIndex = useMemo(
     () =>
@@ -173,6 +226,22 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
       setIsPlaying(false);
     }
   }, [filteredFiles.length, activeIndex]);
+
+  useEffect(() => {
+    if (!hasMore || !loadMoreTriggerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) return;
+        void loadMoreFiles();
+      },
+      { rootMargin: "240px 0px" }
+    );
+
+    observer.observe(loadMoreTriggerRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loadMoreFiles]);
 
   useEffect(() => {
     if (activeIndex === null) return;
@@ -232,7 +301,9 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
             </span>
           )}
           {gallery.description && <span style={{ color: "#555" }}>{gallery.description}</span>}
-          <span style={{ color: "#666" }}>{files.length} file{files.length === 1 ? "" : "s"}</span>
+          <span style={{ color: "#666" }}>
+            Showing {loadedFiles.length} of {totalFileCount} file{totalFileCount === 1 ? "" : "s"}
+          </span>
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
           <input
@@ -269,7 +340,7 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
         </div>
       </header>
 
-      {files.length === 0 ? (
+      {loadedFiles.length === 0 ? (
         <div style={{ padding: 24, background: "#fafafa", borderRadius: 8, border: "1px solid #eee" }}>
           <p style={{ margin: 0 }}>This gallery is empty. Upload files and add them from your library to get started.</p>
         </div>
@@ -350,6 +421,26 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
             </div>
           );
           })}
+        </div>
+      )}
+
+      {hasMore && (
+        <div style={{ display: "grid", placeItems: "center", gap: 8, paddingBottom: 12 }}>
+          <div ref={loadMoreTriggerRef} style={{ width: 1, height: 1 }} aria-hidden />
+          <button
+            onClick={() => void loadMoreFiles()}
+            disabled={isFetchingMore}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "1px solid #1a73e8",
+              background: isFetchingMore ? "#e9f1fe" : "#fff",
+              color: "#1a73e8",
+              cursor: isFetchingMore ? "wait" : "pointer",
+            }}
+          >
+            {isFetchingMore ? "Loading more…" : "Load more"}
+          </button>
         </div>
       )}
 
