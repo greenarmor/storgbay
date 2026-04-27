@@ -3,12 +3,10 @@ import { fileURLToPath } from 'node:url';
 
 const storage = process.env.S3_ENDPOINT ? new URL(process.env.S3_ENDPOINT) : null;
 
-const storagePathname = `${storage?.pathname?.replace(/\/$/, '') || '/storage'}/**`;
-
 const storagePattern = {
   protocol: storage?.protocol?.replace(':', '') ?? 'https',
   hostname: storage?.hostname ?? 'storgbay.online',
-  pathname: storagePathname,
+  pathname: `${storage?.pathname?.replace(/\/$/, '') || ''}/**`,
 };
 
 if (storage?.port) {
@@ -23,6 +21,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost', port: '9000', pathname: '/**' },
+      { protocol: 'https', hostname: 'storgbay.online', pathname: '/**' },
       storagePattern,
     ],
   },

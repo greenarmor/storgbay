@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   formatBytes,
   formatDate,
-  isAnimatedImage,
   isAudio,
   isDocumentFile,
   isImage,
@@ -479,13 +477,11 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
                   />
                   <div style={{ width: "100%", borderRadius: 8, overflow: "hidden" }}>
                     {isImage(item.mime) ? (
-                      <Image
+                      <img
                         src={item.url}
                         alt={item.filename}
-                        width={640}
-                        height={480}
-                        style={{ width: "100%", height: "auto" }}
-                        unoptimized={isAnimatedImage(item.mime, item.filename)}
+                        loading="lazy"
+                        style={{ width: "100%", height: "auto", display: "block" }}
                       />
                     ) : isVideo(item.mime) ? (
                       <video src={item.url} controls style={{ width: "100%", borderRadius: 8 }} />

@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   formatBytes,
   formatDate,
-  isAnimatedImage,
   isAudio,
   isDocumentFile,
   isImage,
@@ -110,14 +108,12 @@ function MediaPreview({ file, onClick }: { file: GalleryFile; onClick?: () => vo
 
   if (isImage(file.mime)) {
     return (
-      <Image
+      <img
         src={file._url}
         alt={file.filename}
-        width={800}
-        height={600}
+        loading="lazy"
         style={imageStyles}
         onClick={onClick}
-        unoptimized={isAnimatedImage(file.mime, file.filename)}
       />
     );
   }
@@ -444,22 +440,21 @@ export function GalleryViewer({ gallery, files }: { gallery: GalleryInfo; files:
             ) : isImage(activeFile.mime) ? (
               <div
                 style={{
-                  position: "relative",
                   width: "min(1200px, 100%)",
                   height: "100%",
                   maxHeight: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   borderRadius: 12,
                   overflow: "hidden",
                   background: "#000",
                 }}
               >
-                <Image
+                <img
                   src={activeFile._url}
                   alt={activeFile.filename}
-                  fill
-                  sizes="100vw"
-                  style={{ objectFit: "contain" }}
-                  unoptimized={isAnimatedImage(activeFile.mime, activeFile.filename)}
+                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
                 />
               </div>
             ) : isVideo(activeFile.mime) ? (
