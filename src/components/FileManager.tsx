@@ -45,6 +45,8 @@ type Filter =
   | "other"
   | "galleries";
 
+const ITEMS_PER_PAGE = 30;
+
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "All items" },
   { value: "images", label: "Images" },
@@ -90,6 +92,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fileItems = useMemo(() => items.filter(isFileItem), [items]);
   const galleryItems = useMemo(() => items.filter(isGalleryItem), [items]);
@@ -310,6 +313,24 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
     }
   }
 
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredItems, currentPage]);
+
   const selectedCount = selectedIds.size;
   const hasAnyItems = items.length > 0;
 
@@ -409,12 +430,37 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
         </div>
       </div>
 
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+          {filteredItems.length === 0 ? "Showing 0 results" : `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, filteredItems.length)} of ${filteredItems.length}`}
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="drive-button-ghost"
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="drive-button-ghost"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       <div
         style={{
           display: "grid",
           gap: 16,
           gridTemplateColumns:
-            filteredItems.length > 0 ? "repeat(auto-fill, minmax(220px, 1fr))" : "1fr",
+            paginatedItems.length > 0 ? "repeat(auto-fill, minmax(220px, 1fr))" : "1fr",
         }}
       >
         {loading && items.length === 0 ? (
@@ -429,7 +475,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
           >
             Loading items…
           </div>
-        ) : filteredItems.length === 0 ? (
+        ) : paginatedItems.length === 0 ? (
           <div
             style={{
               padding: 32,
@@ -451,7 +497,7 @@ export function FileManager({ initialSearch = "" }: { initialSearch?: string } =
             )}
           </div>
         ) : (
-          filteredItems.map((item) => {
+          paginatedItems.map((item) => {
             if (isFileItem(item)) {
               const isSelected = selectedIds.has(item.id);
               const isDocument = isDocumentFile(item.mime, item.filename);
