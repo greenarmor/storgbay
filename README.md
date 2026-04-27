@@ -4,7 +4,7 @@ A minimal, ready-to-run scaffold for a **file sharing + image gallery** web app.
 
 ## Features
 - Next.js (App Router) with simple pages: public feed, gallery, upload, dashboard, admin, document viewer
-- Auth.js (NextAuth v5) with **Credentials** and Prisma Adapter
+- Auth.js (NextAuth v4) with **Credentials** and Prisma Adapter
 - Prisma (MySQL) schema for users/files/galleries/shares
 - MinIO (S3) integration with **presigned PUT** (upload) and **presigned GET** (for private galleries)
 - Built-in document viewer for previewing Word, Excel, PowerPoint, and PDF documents stored in Storgbay
@@ -32,5 +32,7 @@ pnpm dev
 ```
 Open http://localhost:3999 and sign in at `/api/auth/signin` using the seeded admin env values.
 
-> To make galleries **private**, remove anonymous read from the bucket and the app will serve files via short-lived presigned GETs when a gallery is private.
+> If you hit `[next-auth][error][JWT_SESSION_ERROR] decryption operation failed`, your browser likely has an old session cookie encrypted with a different secret. Set a stable `NEXTAUTH_SECRET` (or `AUTH_SECRET`) and clear cookies for `localhost:3999`.
+> Bootstrap admin credentials are read from `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`; if you change them, restart the app and sign in once with the new values to sync the admin account.
 
+> To make galleries **private**, remove anonymous read from the bucket and the app will serve files via short-lived presigned GETs when a gallery is private.

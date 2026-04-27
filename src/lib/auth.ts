@@ -5,7 +5,7 @@ import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 
 export type AppSessionUser = DefaultSession["user"] & {
   id: string;
@@ -22,8 +22,31 @@ type TokenWithRole = JWT & {
   role?: AppSessionUser["role"];
 };
 
+async function authorizeBootstrapAdmin(email: string, password: string): Promise<UserWithRole | null> {
+  const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+  const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  if (!bootstrapEmail || !bootstrapPassword) return null;
+  if (email.trim().toLowerCase() !== bootstrapEmail) return null;
+  if (password !== bootstrapPassword) return null;
+
+  const passwordHash = await hash(bootstrapPassword, 12);
+  const admin = await prisma.user.upsert({
+    where: { email: bootstrapEmail },
+    create: { email: bootstrapEmail, passwordHash, role: "ADMIN", name: "Admin" },
+    update: { passwordHash, role: "ADMIN", name: "Admin" },
+  });
+
+  return {
+    id: admin.id,
+    email: admin.email ?? bootstrapEmail,
+    name: admin.name,
+    role: admin.role,
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -34,6 +57,12 @@ export const authOptions: NextAuthOptions = {
       credentials: { email: {}, password: {} },
       authorize: async (creds) => {
         if (!creds?.email || !creds?.password) return null;
+        const bootstrapAdmin = await authorizeBootstrapAdmin(
+          creds.email as string,
+          creds.password as string,
+        );
+        if (bootstrapAdmin) return bootstrapAdmin;
+
         const user = await prisma.user.findUnique({ where: { email: creds.email as string } });
         if (!user?.passwordHash) return null;
         const ok = await compare(creds.password as string, user.passwordHash);
@@ -79,4 +108,3 @@ export { handler as GET, handler as POST };
 
 export const auth = async () =>
   (await getServerSession(authOptions)) as AppSession | null;
-
