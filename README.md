@@ -21,7 +21,7 @@ A minimal, ready-to-run scaffold for a **file sharing + image gallery** web app.
 1. **MySQL**: create DB `fileshare` and user `app`/`apppass`; or update `DATABASE_URL`. If your MySQL user cannot create
    databases, also create a secondary schema (for example `fileshare_shadow`) and point `SHADOW_DATABASE_URL` to it so Prisma
    can run migrations without needing create-database permissions.
-2. **MinIO**: run locally on `:9000`, create bucket `uploads`, optionally enable anonymous read for public galleries. Use the new root credentials (`MINIO_ROOT_USER=root` / `MINIO_ROOT_PASSWORD=<your-password>`) or mirror them via `S3_ACCESS_KEY`/`S3_SECRET_KEY` in your `.env` file. For production, you can reuse the main domain and expose MinIO through Nginx under `/storage`; see [`docs/nginx-minio-proxy.md`](docs/nginx-minio-proxy.md) for an example reverse proxy configuration that forwards to the MinIO server on port 9000.
+2. **MinIO**: run locally on `:9000`, create bucket `uploads`, optionally enable anonymous read for public galleries. Use the new root credentials (`MINIO_ROOT_USER=root` / `MINIO_ROOT_PASSWORD=<your-password>`) or mirror them via `S3_ACCESS_KEY`/`S3_SECRET_KEY` in your `.env` file. For production, keep MinIO internal with `S3_INTERNAL_ENDPOINT=http://127.0.0.1:9000`, set `S3_PUBLIC_ENDPOINT=https://storgbay.online`, `S3_BUCKET=uploads`, and `S3_FORCE_PATH_STYLE=true` so browser-facing URLs resolve through `https://storgbay.online/uploads/<object-key>`; see [`docs/nginx-minio-proxy.md`](docs/nginx-minio-proxy.md) for an example reverse proxy configuration that forwards to the MinIO server on port 9000.
 3. Copy env and install deps:
 ```bash
 cp .env.example .env

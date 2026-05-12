@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const storage = process.env.S3_ENDPOINT ? new URL(process.env.S3_ENDPOINT) : null;
+const storageEndpoint = process.env.S3_PUBLIC_ENDPOINT ?? process.env.S3_ENDPOINT;
+const storage = storageEndpoint ? new URL(storageEndpoint) : null;
 
 const storagePattern = {
   protocol: storage?.protocol?.replace(':', '') ?? 'https',
