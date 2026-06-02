@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { canManageGallery } from "@/lib/gallery-permissions";
 import { z } from "zod";
@@ -83,6 +84,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
     include: { user: true },
   });
 
+  void audit({ action: "gallery.manager.add", actorId: session.user.id, resource: `gallery/${gallery.id}`, metadata: { managerUserId: targetUser.id, managerEmail: trimmedEmail } });
+
   return Response.json(serialiseManager(manager));
 }
 
@@ -106,6 +109,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
   }
 
   await prisma.galleryManager.delete({ where: { galleryId_userId: { galleryId: gallery.id, userId } } });
+  void audit({ action: "gallery.manager.remove", actorId: session.user.id, resource: `gallery/${gallery.id}`, metadata: { removedUserId: userId } });
 
   return Response.json({ removed: true });
 }

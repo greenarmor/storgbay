@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { canManageGallery, canViewGallery } from "@/lib/gallery-permissions";
 import { z } from "zod";
@@ -39,5 +40,6 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   if (!g || !canManageGallery(g, session)) return new Response("Forbidden", { status: 403 });
   const data = UpdateSchema.parse(await req.json());
   const updated = await prisma.gallery.update({ where: { id: g.id }, data });
+  void audit({ action: "gallery.update", actorId: session.user.id, resource: `gallery/${g.id}`, metadata: data });
   return Response.json(updated);
 }

@@ -5,6 +5,7 @@ import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
+import { audit } from "@/lib/audit";
 import { compare, hash } from "bcryptjs";
 
 export type AppSessionUser = DefaultSession["user"] & {
@@ -56,7 +57,12 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: { email: {}, password: {} },
       authorize: async (creds) => {
-        if (!creds?.email || !creds?.password) return null;
+        if (!creds?.email || !creds?.password) {
+          void audit({ action: "auth.login.failed", metadata: { reason: "missing_credentials" } });
+          return null;
+        }
+        const emailAttempt = (creds.email as string).trim().toLowerCase();
+
         const bootstrapAdmin = await authorizeBootstrapAdmin(
           creds.email as string,
           creds.password as string,
@@ -64,9 +70,15 @@ export const authOptions: NextAuthOptions = {
         if (bootstrapAdmin) return bootstrapAdmin;
 
         const user = await prisma.user.findUnique({ where: { email: creds.email as string } });
-        if (!user?.passwordHash) return null;
+        if (!user?.passwordHash) {
+          void audit({ action: "auth.login.failed", metadata: { reason: "user_not_found", email: emailAttempt } });
+          return null;
+        }
         const ok = await compare(creds.password as string, user.passwordHash);
-        if (!ok) return null;
+        if (!ok) {
+          void audit({ action: "auth.login.failed", actorId: user.id, metadata: { reason: "wrong_password" } });
+          return null;
+        }
         const userWithRole: UserWithRole = {
           id: user.id,
           email: user.email ?? creds.email ?? "",

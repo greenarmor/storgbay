@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -24,6 +25,7 @@ export async function POST(req: Request) {
     },
     include: { items: true },
   });
+  void audit({ action: "gallery.create", actorId: session.user.id, resource: `gallery/${gallery.id}`, metadata: { title, visibility } });
   return Response.json(gallery);
 }
 

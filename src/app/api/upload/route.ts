@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { canManageGallery } from "@/lib/gallery-permissions";
 import { presignPut } from "@/lib/s3";
 
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.email) return new NextResponse("Unauthorized", { status: 401 });
@@ -13,6 +15,10 @@ export async function POST(req: Request) {
   const mime = typeof payload?.mime === "string" && payload.mime.trim() ? payload.mime : "application/octet-stream";
   const rawSize = Number(payload?.size);
   const size = Number.isFinite(rawSize) && rawSize > 0 ? rawSize : 0;
+
+  if (size > MAX_UPLOAD_BYTES) {
+    return new NextResponse(`File size exceeds the maximum allowed (${MAX_UPLOAD_BYTES / (1024 * 1024)} MB).`, { status: 413 });
+  }
   const rawGalleryIds: unknown[] = Array.isArray(payload?.galleryIds) ? payload.galleryIds : [];
   const galleryIds: string[] = Array.from(
     new Set(rawGalleryIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0))

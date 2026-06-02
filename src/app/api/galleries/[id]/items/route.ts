@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { canManageGallery, canViewGallery } from "@/lib/gallery-permissions";
 import { presignGet, publicUrl } from "@/lib/s3";
@@ -132,6 +133,8 @@ export async function POST(req: Request, context: RouteContext) {
       })
     )
   );
+
+  void audit({ action: "gallery.items.add", actorId: session.user.id, resource: `gallery/${gallery.id}`, metadata: { addedCount: orderedIds.length } });
 
   return Response.json({ added: orderedIds.length });
 }
