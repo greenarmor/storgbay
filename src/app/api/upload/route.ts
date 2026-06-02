@@ -1,8 +1,10 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { canManageGallery } from "@/lib/gallery-permissions";
+import { sanitizeFilename } from "@/lib/file-utils";
 import { presignPut } from "@/lib/s3";
 
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
@@ -11,7 +13,8 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.email) return new NextResponse("Unauthorized", { status: 401 });
   const payload = await req.json();
-  const filename = typeof payload?.filename === "string" ? payload.filename : undefined;
+  const rawFilename = typeof payload?.filename === "string" ? payload.filename : undefined;
+  const filename = rawFilename ? sanitizeFilename(rawFilename) : undefined;
   const mime = typeof payload?.mime === "string" && payload.mime.trim() ? payload.mime : "application/octet-stream";
   const rawSize = Number(payload?.size);
   const size = Number.isFinite(rawSize) && rawSize > 0 ? rawSize : 0;
@@ -79,6 +82,9 @@ export async function POST(req: Request) {
       })
     );
   }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  void audit({ action: "file.upload", actorId: session.user.id, resource: `file/${file.id}`, ipAddress: ip, metadata: { filename, bytes: size, mime } });
 
   return NextResponse.json({ url, key });
 }

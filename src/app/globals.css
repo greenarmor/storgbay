@@ -2320,3 +2320,51 @@ body.landing-active .drive-main {
     padding: 1rem;
   }
 }
+
+.cookie-consent-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--drive-surface);
+  border-top: 1px solid var(--drive-border);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  padding: 1rem 1.5rem;
+}
+
+.cookie-consent-banner__content {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.cookie-consent-banner__content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--drive-text);
+}
+
+.cookie-consent-banner__link {
+  color: var(--drive-accent);
+  text-decoration: underline;
+}
+
+.cookie-consent-banner__button {
+  flex-shrink: 0;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--drive-accent);
+  border: none;
+  border-radius: var(--drive-radius-sm);
+  cursor: pointer;
+}
+
+.cookie-consent-banner__button:hover {
+  opacity: 0.9;
+}

@@ -28,7 +28,6 @@ async function authorizeBootstrapAdmin(email: string, password: string): Promise
   const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
   if (!bootstrapEmail || !bootstrapPassword) return null;
   if (email.trim().toLowerCase() !== bootstrapEmail) return null;
-  if (password !== bootstrapPassword) return null;
 
   const passwordHash = await hash(bootstrapPassword, 12);
   const admin = await prisma.user.upsert({
@@ -36,6 +35,9 @@ async function authorizeBootstrapAdmin(email: string, password: string): Promise
     create: { email: bootstrapEmail, passwordHash, role: "ADMIN", name: "Admin" },
     update: { passwordHash, role: "ADMIN", name: "Admin" },
   });
+
+  const ok = await compare(password, admin.passwordHash ?? passwordHash);
+  if (!ok) return null;
 
   return {
     id: admin.id,
@@ -48,7 +50,18 @@ async function authorizeBootstrapAdmin(email: string, password: string): Promise
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
   secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 12 * 60 * 60 },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   pages: {
     signIn: "/login",
   },

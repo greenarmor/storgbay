@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
@@ -38,6 +39,7 @@ export async function PATCH(request: Request) {
 
   const passwordHash = await hash(data.newPassword, 12);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+  void audit({ action: "account.password.change", actorId: session.user.id, resource: `user/${user.id}` });
 
   return new Response(null, { status: 204 });
 }

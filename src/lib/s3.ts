@@ -15,6 +15,8 @@ const secretAccessKey = process.env.S3_SECRET_KEY ?? process.env.MINIO_ROOT_PASS
 let cachedInternalClient: S3Client | null = null;
 let cachedPublicClient: S3Client | null = null;
 
+const sseAlgorithm = process.env.S3_SSE_ALGORITHM || undefined;
+
 function ensureCredentials() {
   if (!accessKeyId || !secretAccessKey) {
     throw new Error(
@@ -63,6 +65,9 @@ function encodeKey(key: string) {
 export async function presignPut(key: string, contentType: string, contentLength?: number) {
   const bucket = process.env.S3_BUCKET!;
   const input: PutObjectCommandInput = { Bucket: bucket, Key: key, ContentType: contentType };
+  if (sseAlgorithm) {
+    input.ServerSideEncryption = sseAlgorithm as PutObjectCommandInput["ServerSideEncryption"];
+  }
   if (typeof contentLength === "number" && Number.isFinite(contentLength) && contentLength >= 0) {
     input.ContentLength = contentLength;
   }

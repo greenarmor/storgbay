@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { deleteObject } from "@/lib/s3";
 
@@ -32,5 +33,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
   }
 
   await prisma.file.delete({ where: { id } });
+  const ip = _req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  void audit({ action: "file.delete", actorId: session.user.id, resource: `file/${id}`, ipAddress: ip, metadata: { key: file.key } });
   return Response.json({ success: true });
 }

@@ -8,8 +8,9 @@ import { HeaderSearch } from "@/components/HeaderSearch";
 import { DriveSidebar } from "@/components/DriveSidebar";
 import { auth, AppSession } from "@/lib/auth";
 import { HeaderActions } from "@/components/HeaderActions";
+import { CookieConsent } from "@/components/CookieConsent";
 
-const publicNav = [{ href: "/", label: "Home" }];
+const publicNav = [{ href: "/", label: "Home" }, { href: "/privacy", label: "Privacy" }];
 const authenticatedNav = [
   ...publicNav,
   { href: "/dashboard", label: "My Drive" },
@@ -56,6 +57,7 @@ export default async function RootLayout({
             {children}
           </main>
         </div>
+        <CookieConsent />
       </body>
     </html>
   );

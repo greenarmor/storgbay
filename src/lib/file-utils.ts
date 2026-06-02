@@ -111,3 +111,19 @@ export function formatDate(value: string | Date): string {
     timeStyle: "short",
   }).format(date);
 }
+
+const DANGEROUS_FILENAME_CHARS = /[\x00-\x1f\x7f/\\:*?"<>|]/g;
+
+export function sanitizeFilename(filename: string): string {
+  const trimmed = filename.trim().replace(DANGEROUS_FILENAME_CHARS, "_");
+  const maxLen = 255;
+  if (trimmed.length > maxLen) {
+    const dotIndex = trimmed.lastIndexOf(".");
+    if (dotIndex > 0 && dotIndex > trimmed.length - maxLen) {
+      const ext = trimmed.slice(dotIndex);
+      return trimmed.slice(0, maxLen - ext.length) + ext;
+    }
+    return trimmed.slice(0, maxLen);
+  }
+  return trimmed || "unnamed";
+}

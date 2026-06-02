@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -67,6 +68,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   try {
     const user = await prisma.user.update({ where: { id }, data: updateData });
+    void audit({ action: "admin.user.update", actorId: session.user.id, resource: `user/${id}`, metadata: { role: data.role, passwordChanged: !!data.password } });
     return Response.json(sanitizeUser(user));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
@@ -90,6 +92,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   try {
     await prisma.user.delete({ where: { id } });
+    void audit({ action: "admin.user.delete", actorId: session.user.id, resource: `user/${id}` });
     return new Response(null, { status: 204 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

@@ -64,7 +64,7 @@ export function UploadClient() {
         setError(message || "Failed to start upload.");
         return;
       }
-      const { url } = await response.json();
+      const { url, key } = await response.json();
       setStatus(`Uploading ${file.name}...`);
       const uploadResponse = await fetch(url, {
         method: "PUT",
@@ -74,6 +74,19 @@ export function UploadClient() {
       if (!uploadResponse.ok) {
         setError(`Failed to upload ${file.name}.`);
         return;
+      }
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+        const checksum = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        await fetch("/api/upload/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, checksum }),
+        });
+      } catch {
+        // Non-blocking: checksum confirmation is best-effort
       }
     }
     setStatus(

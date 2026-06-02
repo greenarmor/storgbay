@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
         role: data.role as unknown as Prisma.UserCreateInput["role"],
       },
     });
+    void audit({ action: "admin.user.create", actorId: session.user.id, resource: `user/${user.id}`, metadata: { email: data.email, role: data.role } });
     return Response.json(sanitizeUser(user), { status: 201 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
