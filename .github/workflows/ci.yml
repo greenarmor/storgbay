@@ -10,11 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: mysql://user:password@localhost:3306/app
-      S3_ACCESS_KEY: test
-      S3_SECRET_KEY: test
-      S3_ENDPOINT: https://example.com
-      S3_BUCKET: test-bucket
+      DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET }}
+      AUTH_SECRET: ${{ secrets.CI_NEXTAUTH_SECRET }}
+      S3_ACCESS_KEY: ${{ secrets.CI_S3_ACCESS_KEY }}
+      S3_SECRET_KEY: ${{ secrets.CI_S3_SECRET_KEY }}
+      S3_ENDPOINT: https://ci.example.com
+      S3_BUCKET: ci-test-bucket
       S3_REGION: us-east-1
       S3_FORCE_PATH_STYLE: "true"
 

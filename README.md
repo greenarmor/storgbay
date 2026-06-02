@@ -2,17 +2,20 @@
 
 ![GESF Compliance](badge.svg)
 <!-- GESF-SCORE-START -->
-> **GESF Compliance Score: 0% (F)**
+> **GESF Compliance Score: 92% (A)**
 >
 > | Framework | Score | Grade | Controls |
 > |-----------|-------|-------|----------|
 > | GDPR | 95% | A | 20/22 passed |
 > | OWASP | 100% | A | 6/6 passed |
 >
-> Audit findings: 9 critical, 4 high, 8 medium (score deduction: -100%)
+> Audit findings: 1 medium (score deduction: -4%)
 >
 > _(Last evaluated: 2026-06-02)_
 <!-- GESF-SCORE-END -->
+
+
+
 
 
 A minimal, ready-to-run scaffold for a **file sharing + image gallery** web app.
