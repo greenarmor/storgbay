@@ -7,7 +7,19 @@ type AuditInput = {
   resource?: string | null;
   metadata?: Prisma.InputJsonValue | null;
   ipAddress?: string | null;
+  request?: Request | null;
 };
+
+function extractIp(input: AuditInput): string | null {
+  if (input.ipAddress) return input.ipAddress;
+  if (!input.request) return null;
+  return (
+    input.request.headers.get("x-client-ip") ??
+    input.request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    input.request.headers.get("x-real-ip") ??
+    null
+  );
+}
 
 export async function audit(input: AuditInput) {
   try {
@@ -17,7 +29,7 @@ export async function audit(input: AuditInput) {
         actorId: input.actorId ?? null,
         resource: input.resource ?? null,
         metadata: input.metadata ?? undefined,
-        ipAddress: input.ipAddress ?? null,
+        ipAddress: extractIp(input),
       },
     });
   } catch (error) {

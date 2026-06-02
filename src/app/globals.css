@@ -1773,6 +1773,172 @@ body.landing-active .drive-main {
   }
 }
 
+.account-settings-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--drive-border);
+  border-radius: 6px;
+  background: var(--drive-surface);
+  color: var(--drive-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.account-settings-action-button:hover {
+  border-color: var(--drive-accent);
+}
+
+.account-settings-action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account-settings-section--danger {
+  border-top: 1px solid var(--drive-border);
+  padding-top: 1.25rem;
+}
+
+.account-settings-danger-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid #dc3545;
+  border-radius: 6px;
+  background: transparent;
+  color: #dc3545;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.account-settings-danger-button:hover {
+  background: #dc3545;
+  color: #fff;
+}
+
+.account-settings-danger-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account-settings-cancel-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--drive-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--drive-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.account-settings-delete-confirm {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-settings-delete-warning {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #dc3545;
+}
+
+.account-settings-delete-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.account-settings-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--drive-border);
+  border-radius: 6px;
+  background: var(--drive-bg);
+  color: var(--drive-text);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.account-settings-input:focus {
+  outline: none;
+  border-color: var(--drive-accent);
+}
+
+.account-settings-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #dc3545;
+}
+
+.cookie-consent-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 80;
+  background: var(--drive-surface);
+  border-top: 1px solid var(--drive-border);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cookie-consent-banner__content {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cookie-consent-banner p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--drive-muted);
+}
+
+.cookie-consent-banner__link {
+  color: var(--drive-accent);
+  text-decoration: underline;
+}
+
+.cookie-consent-banner__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.cookie-consent-banner__button {
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--drive-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--drive-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.cookie-consent-banner__button:hover {
+  border-color: var(--drive-accent);
+}
+
+.cookie-consent-banner__button--accept {
+  background: var(--drive-accent);
+  color: #fff;
+  border-color: var(--drive-accent);
+}
+
+.cookie-consent-banner__button--accept:hover {
+  opacity: 0.9;
+}
+
 
 .document-workspace {
   max-width: 1100px;

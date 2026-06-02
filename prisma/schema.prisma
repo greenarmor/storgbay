@@ -31,6 +31,7 @@ model User {
   files           File[]
   galleries       Gallery[]       @relation("UserGalleries")
   managedGalleries GalleryManager[]
+  consents        ConsentRecord[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -129,4 +130,17 @@ model AuditLog {
   metadata  Json?
   ipAddress String?
   createdAt DateTime @default(now())
+}
+
+model ConsentRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  version   String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
 }

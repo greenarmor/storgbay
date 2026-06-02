@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminFileManager } from "@/components/AdminFileManager";
@@ -45,6 +46,26 @@ export default async function AdminPage() {
       </header>
       <UserManagement initialUsers={adminUsers} currentUserId={session.user.id} />
       <AdminFileManager />
+      <section style={{ padding: 16, border: "1px solid #e0e0e0", borderRadius: 8 }}>
+        <h2 style={{ marginBottom: 4 }}>GDPR Compliance</h2>
+        <p style={{ margin: "0 0 12px", color: "#555" }}>
+          Monitor data protection compliance, consent records, and user rights.
+        </p>
+        <Link
+          href="/admin/gdpr"
+          style={{
+            display: "inline-flex",
+            padding: "0.5rem 1rem",
+            border: "1px solid #e0e0e0",
+            borderRadius: 6,
+            textDecoration: "none",
+            color: "inherit",
+            fontSize: "0.85rem",
+          }}
+        >
+          Open GDPR Dashboard →
+        </Link>
+      </section>
     </div>
   );
 }
