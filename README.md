@@ -2,17 +2,19 @@
 
 ![GESF Compliance](badge.svg)
 <!-- GESF-SCORE-START -->
-> **GESF Compliance Score: 92% (A)**
+> **GESF Compliance Score: 100% (A)**
 >
 > | Framework | Score | Grade | Controls |
 > |-----------|-------|-------|----------|
-> | GDPR | 95% | A | 20/22 passed |
+> | GDPR | 100% | A | 22/22 passed |
 > | OWASP | 100% | A | 6/6 passed |
 >
-> Audit findings: 1 medium (score deduction: -4%)
 >
-> _(Last evaluated: 2026-06-02)_
+> _(Last evaluated: 2026-06-10)_
 <!-- GESF-SCORE-END -->
+
+
+
 
 
 
