@@ -24,12 +24,12 @@
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "gsap": "^3.12.5",
-    "next": "^16.2.11",
-    "next-auth": "^4.24.12",
+    "next": "^16.2.6",
+    "next-auth": "^4.24.15",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.53.0",
-    "sharp": "^0.33.4",
+    "sharp": "^0.35.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
