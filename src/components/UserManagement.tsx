@@ -45,6 +45,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [resetLink, setResetLink] = useState<{ email: string | null; url: string; expiresAt: string } | null>(null);
 
   const sortedUsers = useMemo(
     () =>
@@ -122,15 +123,25 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
     await updateUser(userId, { role });
   }
 
-  async function handlePasswordReset(userId: string) {
+  async function handleGenerateResetLink(userId: string, email: string | null) {
     clearMessages();
-    const password = window.prompt("Enter a new password for this user (min. 6 characters)");
-    if (!password) return;
-    if (password.length < 6) {
-      setError("Passwords must be at least 6 characters long.");
-      return;
+    setResetLink(null);
+    setBusyUserId(userId);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/reset-password`, { method: "POST" });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to generate a reset link");
+      }
+
+      const data: { email: string | null; resetUrl: string; expiresAt: string } = await response.json();
+      setResetLink({ email: data.email ?? email, url: data.resetUrl, expiresAt: data.expiresAt });
+      setFeedback("Reset link generated. It is shown once — share it with the user directly.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to generate a reset link");
+    } finally {
+      setBusyUserId(null);
     }
-    await updateUser(userId, { password });
   }
 
   async function handleDeleteUser(userId: string) {
@@ -233,6 +244,34 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
         </div>
       )}
 
+      {resetLink && (
+        <div
+          style={{
+            display: "grid",
+            gap: 8,
+            padding: 12,
+            border: "1px solid var(--drive-border)",
+            borderRadius: "var(--drive-radius-md)",
+            background: "var(--drive-muted-surface)",
+          }}
+        >
+          <strong>Password reset link for {resetLink.email ?? "user"}</strong>
+          <code style={{ wordBreak: "break-all", fontSize: 12 }}>{resetLink.url}</code>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="drive-button-muted"
+              onClick={() => navigator.clipboard?.writeText(resetLink.url)}
+            >
+              Copy link
+            </button>
+            <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+              Expires {new Date(resetLink.expiresAt).toLocaleString()}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gap: 12 }}>
         <h2 style={{ margin: 0 }}>Team members</h2>
         <div
@@ -298,11 +337,11 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
                   >
                     <button
                       type="button"
-                      onClick={() => handlePasswordReset(user.id)}
+                      onClick={() => handleGenerateResetLink(user.id, user.email)}
                       disabled={busyUserId === user.id}
                       className="drive-button-muted"
                     >
-                      Set password
+                      Reset link
                     </button>
                     <button
                       type="button"

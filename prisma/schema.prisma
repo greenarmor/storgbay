@@ -35,6 +35,8 @@ model User {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
+  passwordResetTokenHash  String?  @unique
+  passwordResetExpiresAt  DateTime?
 }
 
 model Account {

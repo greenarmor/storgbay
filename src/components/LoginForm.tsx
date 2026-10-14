@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -89,7 +90,7 @@ export function LoginForm() {
       <div className="auth-field">
         <div className="auth-field-label">
           <label htmlFor="password">Password</label>
-          <a href="mailto:support@storgbay.com">Need help?</a>
+          <Link href="/forgot-password">Forgot password?</Link>
         </div>
         <input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
