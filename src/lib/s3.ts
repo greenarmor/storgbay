@@ -8,7 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const internalEndpoint = process.env.S3_INTERNAL_ENDPOINT ?? process.env.S3_ENDPOINT; // e.g., http://127.0.0.1:9000
-const publicEndpoint = process.env.S3_PUBLIC_ENDPOINT ?? internalEndpoint; // e.g., https://storgbay.online
+const publicEndpoint = process.env.S3_PUBLIC_ENDPOINT ?? internalEndpoint; // e.g., https://storgbay.com
 const accessKeyId = process.env.S3_ACCESS_KEY ?? process.env.MINIO_ROOT_USER;
 const secretAccessKey = process.env.S3_SECRET_KEY ?? process.env.MINIO_ROOT_PASSWORD;
 
@@ -92,7 +92,7 @@ export function publicUrl(key: string) {
   const base = publicEndpoint.replace(/\/$/, "");
   const normalizedKey = encodeKey(key);
   // Works for public assets if you've enabled anonymous read on the bucket.
-  // For the production proxy, set S3_PUBLIC_ENDPOINT=https://storgbay.online,
+  // For the production proxy, set S3_PUBLIC_ENDPOINT=https://storgbay.com,
   // S3_BUCKET=uploads, and S3_FORCE_PATH_STYLE=true to produce /uploads/<key> URLs.
   return `${base}/${encodeURIComponent(bucket)}/${normalizedKey}`;
 }

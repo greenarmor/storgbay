@@ -89,7 +89,7 @@ export function LoginForm() {
       <div className="auth-field">
         <div className="auth-field-label">
           <label htmlFor="password">Password</label>
-          <a href="mailto:support@storgbay.online">Need help?</a>
+          <a href="mailto:support@storgbay.com">Need help?</a>
         </div>
         <input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>

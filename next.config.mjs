@@ -6,7 +6,7 @@ const storage = storageEndpoint ? new URL(storageEndpoint) : null;
 
 const storagePattern = {
   protocol: storage?.protocol?.replace(':', '') ?? 'https',
-  hostname: storage?.hostname ?? 'storgbay.online',
+  hostname: storage?.hostname ?? 'storgbay.com',
   pathname: `${storage?.pathname?.replace(/\/$/, '') || ''}/**`,
 };
 
@@ -54,7 +54,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost', port: '9000', pathname: '/**' },
-      { protocol: 'https', hostname: 'storgbay.online', pathname: '/**' },
+      { protocol: 'https', hostname: 'storgbay.com', pathname: '/**' },
       storagePattern,
     ],
   },
