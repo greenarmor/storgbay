@@ -47,6 +47,37 @@ async function authorizeBootstrapAdmin(email: string, password: string): Promise
   };
 }
 
+async function authorizeCredentials(
+  creds: Partial<Record<"email" | "password", string>> | undefined,
+): Promise<UserWithRole | null> {
+  if (!creds?.email || !creds?.password) {
+    void audit({ action: "auth.login.failed", metadata: { reason: "missing_credentials" } });
+    return null;
+  }
+  const emailAttempt = creds.email.trim().toLowerCase();
+
+  const bootstrapAdmin = await authorizeBootstrapAdmin(creds.email, creds.password);
+  if (bootstrapAdmin) return bootstrapAdmin;
+
+  const user = await prisma.user.findUnique({ where: { email: emailAttempt } });
+  if (!user?.passwordHash) {
+    void audit({ action: "auth.login.failed", metadata: { reason: "user_not_found", email: emailAttempt } });
+    return null;
+  }
+  const ok = await compare(creds.password, user.passwordHash);
+  if (!ok) {
+    void audit({ action: "auth.login.failed", actorId: user.id, metadata: { reason: "wrong_password" } });
+    return null;
+  }
+  const userWithRole: UserWithRole = {
+    id: user.id,
+    email: user.email ?? emailAttempt,
+    name: user.name,
+    role: user.role,
+  };
+  return userWithRole;
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
   secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
@@ -70,35 +101,25 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: { email: {}, password: {} },
       authorize: async (creds) => {
-        if (!creds?.email || !creds?.password) {
-          void audit({ action: "auth.login.failed", metadata: { reason: "missing_credentials" } });
+        try {
+          return await authorizeCredentials(creds);
+        } catch (error) {
+          // NextAuth swallows thrown errors and returns a bare 401, which makes
+          // a broken database schema or misconfigured env look like bad
+          // credentials. Surface the real cause in server logs and the audit trail.
+          console.error(
+            "[auth] credentials authorize threw:",
+            error instanceof Error ? (error.stack ?? error.message) : error,
+          );
+          void audit({
+            action: "auth.login.failed",
+            metadata: {
+              reason: "authorize_exception",
+              error: error instanceof Error ? error.message : String(error),
+            },
+          });
           return null;
         }
-        const emailAttempt = (creds.email as string).trim().toLowerCase();
-
-        const bootstrapAdmin = await authorizeBootstrapAdmin(
-          creds.email as string,
-          creds.password as string,
-        );
-        if (bootstrapAdmin) return bootstrapAdmin;
-
-        const user = await prisma.user.findUnique({ where: { email: creds.email as string } });
-        if (!user?.passwordHash) {
-          void audit({ action: "auth.login.failed", metadata: { reason: "user_not_found", email: emailAttempt } });
-          return null;
-        }
-        const ok = await compare(creds.password as string, user.passwordHash);
-        if (!ok) {
-          void audit({ action: "auth.login.failed", actorId: user.id, metadata: { reason: "wrong_password" } });
-          return null;
-        }
-        const userWithRole: UserWithRole = {
-          id: user.id,
-          email: user.email ?? creds.email ?? "",
-          name: user.name,
-          role: user.role,
-        };
-        return userWithRole;
       },
     }),
   ],
