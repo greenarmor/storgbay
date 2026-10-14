@@ -14,6 +14,7 @@
     "lint": "next lint",
     "db:migrate": "prisma migrate dev --name init",
     "db:seed": "tsx prisma/seed.ts",
+    "db:reset-password": "tsx prisma/reset-password.ts",
     "release": "npx prisma generate && npm version patch && npm publish"
   },
   "dependencies": {
