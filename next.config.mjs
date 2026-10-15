@@ -2,17 +2,27 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const storageEndpoint = process.env.S3_PUBLIC_ENDPOINT ?? process.env.S3_ENDPOINT;
-const storage = storageEndpoint ? new URL(storageEndpoint) : null;
 
-const storagePattern = {
-  protocol: storage?.protocol?.replace(':', '') ?? 'https',
-  hostname: storage?.hostname ?? 'storgbay.com',
-  pathname: `${storage?.pathname?.replace(/\/$/, '') || ''}/**`,
-};
-
-if (storage?.port) {
-  storagePattern.port = storage.port;
+// Derived entirely from the environment: no hostname is hardcoded, so the same build works
+// for any deployment. A malformed endpoint degrades to "no remote pattern" instead of
+// crashing the build.
+function parseStoragePattern(endpoint) {
+  if (!endpoint) return null;
+  try {
+    const url = new URL(endpoint);
+    return {
+      protocol: url.protocol.replace(':', ''),
+      hostname: url.hostname,
+      pathname: `${url.pathname.replace(/\/$/, '')}/**`,
+      ...(url.port ? { port: url.port } : {}),
+    };
+  } catch {
+    console.warn(`[next.config] Ignoring unparseable storage endpoint: ${endpoint}`);
+    return null;
+  }
 }
+
+const storagePattern = parseStoragePattern(storageEndpoint);
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const resolveShim = (relativePath) => path.join(currentDir, relativePath);
@@ -54,8 +64,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost', port: '9000', pathname: '/**' },
-      { protocol: 'https', hostname: 'storgbay.com', pathname: '/**' },
-      storagePattern,
+      ...(storagePattern ? [storagePattern] : []),
     ],
   },
   turbopack: {
