@@ -45,7 +45,13 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
-  const [resetLink, setResetLink] = useState<{ email: string | null; url: string; expiresAt: string } | null>(null);
+  // Holds either a password-reset link or an invite link, whichever was last produced.
+  const [shareLink, setShareLink] = useState<{
+    label: string;
+    email: string | null;
+    url: string;
+    expiresAt: string | null;
+  } | null>(null);
 
   const sortedUsers = useMemo(
     () =>
@@ -63,12 +69,13 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
   async function handleCreateUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     clearMessages();
+    setShareLink(null);
     setCreating(true);
     try {
       const payload = {
         name: formState.name.trim() || null,
         email: formState.email.trim(),
-        password: formState.password,
+        ...(formState.password ? { password: formState.password } : {}),
         role: formState.role,
       };
 
@@ -83,10 +90,32 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
         throw new Error(message || "Failed to create user");
       }
 
-      const createdUser: AdminUser = await response.json();
+      const result: AdminUser & {
+        invited?: boolean;
+        delivery?: string;
+        inviteUrl?: string;
+        inviteExpiresAt?: string;
+      } = await response.json();
+      const { invited, delivery, inviteUrl, inviteExpiresAt, ...createdUser } = result;
+
       setUsers((prev) => [createdUser, ...prev]);
-      setFeedback(`User “${createdUser.email ?? createdUser.name ?? "(no email)"}” created.`);
       setFormState(() => ({ ...defaultFormState }));
+
+      if (invited && inviteUrl) {
+        setShareLink({
+          label: "Invite link",
+          email: createdUser.email,
+          url: inviteUrl,
+          expiresAt: inviteExpiresAt ?? null,
+        });
+        setFeedback(
+          delivery === "sent"
+            ? `Invite emailed to ${createdUser.email ?? "the user"}. The link is repeated below as a fallback.`
+            : `User invited. Email delivery is not configured, so share the link below with ${createdUser.email ?? "the user"} directly.`,
+        );
+      } else {
+        setFeedback(`User “${createdUser.email ?? createdUser.name ?? "(no email)"}” created.`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create user");
     } finally {
@@ -125,7 +154,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
 
   async function handleGenerateResetLink(userId: string, email: string | null) {
     clearMessages();
-    setResetLink(null);
+    setShareLink(null);
     setBusyUserId(userId);
     try {
       const response = await fetch(`/api/admin/users/${userId}/reset-password`, { method: "POST" });
@@ -135,7 +164,12 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
       }
 
       const data: { email: string | null; resetUrl: string; expiresAt: string } = await response.json();
-      setResetLink({ email: data.email ?? email, url: data.resetUrl, expiresAt: data.expiresAt });
+      setShareLink({
+        label: "Password reset link",
+        email: data.email ?? email,
+        url: data.resetUrl,
+        expiresAt: data.expiresAt,
+      });
       setFeedback("Reset link generated. It is shown once — share it with the user directly.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to generate a reset link");
@@ -206,15 +240,17 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
             />
           </label>
           <label style={{ display: "grid", gap: 4 }}>
-            <span style={{ fontWeight: 600 }}>Temporary password</span>
+            <span style={{ fontWeight: 600 }}>Password (optional)</span>
             <input
               type="password"
               value={formState.password}
               onChange={(event) => setFormState((prev) => ({ ...prev, password: event.target.value }))}
-              placeholder="Set an initial password"
-              required
+              placeholder="Leave blank to send an invite link"
               minLength={6}
             />
+            <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+              Leave blank and the user is emailed a one-time link to choose their own password.
+            </span>
           </label>
           <label style={{ display: "grid", gap: 4 }}>
             <span style={{ fontWeight: 600 }}>Role</span>
@@ -230,7 +266,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
             </select>
           </label>
           <button type="submit" disabled={creating}>
-            {creating ? "Creating…" : "Add user"}
+            {creating ? "Working…" : formState.password ? "Add user" : "Send invite"}
           </button>
         </form>
       </div>
@@ -244,7 +280,7 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
         </div>
       )}
 
-      {resetLink && (
+      {shareLink && (
         <div
           style={{
             display: "grid",
@@ -255,19 +291,23 @@ export function UserManagement({ initialUsers, currentUserId }: Props) {
             background: "var(--drive-muted-surface)",
           }}
         >
-          <strong>Password reset link for {resetLink.email ?? "user"}</strong>
-          <code style={{ wordBreak: "break-all", fontSize: 12 }}>{resetLink.url}</code>
+          <strong>
+            {shareLink.label} for {shareLink.email ?? "user"}
+          </strong>
+          <code style={{ wordBreak: "break-all", fontSize: 12 }}>{shareLink.url}</code>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <button
               type="button"
               className="drive-button-muted"
-              onClick={() => navigator.clipboard?.writeText(resetLink.url)}
+              onClick={() => navigator.clipboard?.writeText(shareLink.url)}
             >
               Copy link
             </button>
-            <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
-              Expires {new Date(resetLink.expiresAt).toLocaleString()}
-            </span>
+            {shareLink.expiresAt && (
+              <span style={{ fontSize: 12, color: "var(--drive-muted)" }}>
+                Expires {new Date(shareLink.expiresAt).toLocaleString()}
+              </span>
+            )}
           </div>
         </div>
       )}

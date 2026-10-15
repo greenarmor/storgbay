@@ -1,6 +1,7 @@
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { MIN_PASSWORD_LENGTH, hashResetToken, isExpired } from "@/lib/password-reset";
+import { notify } from "@/lib/notifications";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 
@@ -42,10 +43,17 @@ export async function POST(request: Request) {
     },
   });
 
+  // A password change is a security event the account owner must hear about even
+  // if they did not initiate it.
+  const delivery = user.email
+    ? await notify({ kind: "password.reset", to: user.email, request })
+    : "not-configured";
+
   void audit({
     action: "auth.password.reset_completed",
     actorId: user.id,
     resource: `user/${user.id}`,
+    metadata: { delivery },
     request,
   });
 

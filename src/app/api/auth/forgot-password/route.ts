@@ -1,6 +1,7 @@
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
-import { buildResetUrl, createResetToken, sendResetEmail } from "@/lib/password-reset";
+import { buildResetUrl, createResetToken, RESET_TOKEN_TTL_MINUTES } from "@/lib/password-reset";
+import { notify } from "@/lib/notifications";
 import { z } from "zod";
 
 const ForgotPasswordSchema = z.object({
@@ -29,7 +30,12 @@ export async function POST(request: Request) {
       data: { passwordResetTokenHash: tokenHash, passwordResetExpiresAt: expiresAt },
     });
 
-    const delivery = await sendResetEmail(email, buildResetUrl(token, request));
+    const delivery = await notify({
+      kind: "password.reset_link",
+      to: email,
+      resetUrl: buildResetUrl(token, request),
+      expiresInMinutes: RESET_TOKEN_TTL_MINUTES,
+    });
     void audit({
       action: "auth.password.reset_requested",
       actorId: user.id,

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
+import { notify } from "@/lib/notifications";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 
@@ -39,7 +40,16 @@ export async function PATCH(request: Request) {
 
   const passwordHash = await hash(data.newPassword, 12);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
-  void audit({ action: "account.password.change", actorId: session.user.id, resource: `user/${user.id}` });
+  const delivery = user.email
+    ? await notify({ kind: "password.changed", to: user.email, request })
+    : "not-configured";
+  void audit({
+    action: "account.password.change",
+    actorId: session.user.id,
+    resource: `user/${user.id}`,
+    metadata: { delivery },
+    request,
+  });
 
   return new Response(null, { status: 204 });
 }

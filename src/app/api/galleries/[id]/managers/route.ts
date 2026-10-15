@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { canManageGallery } from "@/lib/gallery-permissions";
+import { notify } from "@/lib/notifications";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -77,6 +78,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
     return new Response("Only uploaders or admins can be assigned as gallery managers.", { status: 400 });
   }
 
+  const alreadyManager = await prisma.galleryManager.findUnique({
+    where: { galleryId_userId: { galleryId: gallery.id, userId: targetUser.id } },
+  });
+
   const manager = await prisma.galleryManager.upsert({
     where: { galleryId_userId: { galleryId: gallery.id, userId: targetUser.id } },
     update: {},
@@ -84,7 +89,27 @@ export async function POST(req: NextRequest, context: RouteContext) {
     include: { user: true },
   });
 
-  void audit({ action: "gallery.manager.add", actorId: session.user.id, resource: `gallery/${gallery.id}`, metadata: { managerUserId: targetUser.id, managerEmail: trimmedEmail } });
+  // Only on a genuine add: re-adding an existing manager is an idempotent no-op and
+  // must not send a duplicate notification.
+  const delivery =
+    !alreadyManager && targetUser.email
+      ? await notify({
+          kind: "gallery.shared",
+          to: targetUser.email,
+          galleryTitle: gallery.title,
+          galleryId: gallery.id,
+          sharedBy: session.user.email ?? "An administrator",
+          request: req,
+        })
+      : null;
+
+  void audit({
+    action: "gallery.manager.add",
+    actorId: session.user.id,
+    resource: `gallery/${gallery.id}`,
+    metadata: { managerUserId: targetUser.id, managerEmail: trimmedEmail, delivery },
+    request: req,
+  });
 
   return Response.json(serialiseManager(manager));
 }
