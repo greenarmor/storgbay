@@ -28,21 +28,130 @@ function usage(message?: string): never {
   process.exit(1);
 }
 
-async function report() {
-  // An all-columns read mirrors what the app's `findUnique`/`upsert` does, so this
-  // catches schema drift (e.g. a column in schema.prisma that the DB lacks), which
-  // makes the bootstrap login throw and surface as a bare 401.
-  console.log("\nSchema check (app's login query path):");
+function errorCode(error: unknown): string {
+  if (typeof error !== "object" || error === null) return "unknown";
+  // Initialization errors (bad credentials, unreachable host) carry `errorCode`;
+  // known request errors (missing column) carry `code`.
+  const record = error as { code?: unknown; errorCode?: unknown };
+  return String(record.errorCode ?? record.code ?? "unknown");
+}
+
+/** Known request errors carry `code`; connection failures carry `errorCode`, which
+ *  Prisma 5 leaves undefined for driver errors, so fall back to the message. */
+function classify(error: unknown): string {
+  const explicit = errorCode(error);
+  if (explicit !== "unknown") return explicit;
+  const message = error instanceof Error ? error.message : String(error);
+  if (/Authentication failed against database server/i.test(message)) return "P1000";
+  if (/database server is running at/i.test(message)) return "P1001";
+  if (/Error parsing connection string|invalid port number|database string is invalid/i.test(message)) return "URL";
+  return "unknown";
+}
+
+let target: { user: string; host: string; port: string; database: string } | null = null;
+
+function reportTarget() {
+  console.log("\nDatabase target (parsed from DATABASE_URL):");
+  const raw = process.env.DATABASE_URL;
+  if (!raw) {
+    console.log("  ✖ DATABASE_URL is not set in this environment");
+    return;
+  }
   try {
-    await prisma.user.findFirst();
-    console.log("  OK — all User columns present");
+    const url = new URL(raw);
+    const password = decodeURIComponent(url.password);
+    const masked =
+      password.length > 2
+        ? `${password[0]}${"*".repeat(password.length - 2)}${password.at(-1)}`
+        : "*".repeat(password.length);
+    target = {
+      user: url.username,
+      host: url.hostname,
+      port: url.port || "3306",
+      database: url.pathname.replace(/^\//, ""),
+    };
+    console.log(`  user:     ${target.user}`);
+    console.log(`  host:     ${target.host}:${target.port}`);
+    console.log(`  database: ${target.database}`);
+    console.log(`  password: ${password ? `${masked}  (${password.length} chars)` : "(none)"}`);
+    console.log("  (URLs are percent-decoded: a literal @ must be written %40, # as %23)");
   } catch (error) {
-    const code =
-      typeof error === "object" && error !== null && "code" in error
-        ? String((error as { code: unknown }).code)
-        : "unknown";
-    console.log(`  ✖ FAILS (${code}): ${error instanceof Error ? error.message.split("\n")[0] : error}`);
-    console.log("  → run: npx prisma migrate deploy   (or: npx prisma migrate status)");
+    console.log(`  ✖ DATABASE_URL cannot be parsed: ${error instanceof Error ? error.message : error}`);
+    console.log("  → a raw # or @ in the password breaks parsing; percent-encode it (%23, %40)");
+  }
+}
+
+function lastLine(message: string): string {
+  return (
+    message
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .at(-1) ?? message
+  );
+}
+
+async function reportConnectivity(): Promise<boolean> {
+  console.log("\nConnectivity:");
+  try {
+    const rows = await prisma.$queryRaw<{ who: string }[]>`SELECT CURRENT_USER() AS who`;
+    console.log(`  OK — connected as ${rows[0]?.who ?? "?"}`);
+    console.log("  (the matched host needs a GRANT: 'user'@'localhost' does not cover a TCP");
+    console.log("   connection to 127.0.0.1 when skip-name-resolve is enabled)");
+    return true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = classify(error);
+    console.log(`  ✖ FAILS (${code}): ${lastLine(message)}`);
+    const user = target?.user ?? "<user>";
+    const database = target?.database ?? "<database>";
+    const host = target?.host ?? "127.0.0.1";
+    if (code === "P1000") {
+      console.log("  → MySQL rejected these credentials. Check them without Prisma:");
+      console.log(`      mysql -h ${host} -u ${user} -p ${database} -e 'SELECT CURRENT_USER();'`);
+      console.log("    Succeeds there? DATABASE_URL holds a different password (quoting,");
+      console.log("    percent-encoding, trailing whitespace). Fails there? change both together:");
+      console.log(`      ALTER USER '${user}'@'localhost' IDENTIFIED BY '<new-password>';`);
+      console.log("    Common trap: URLs are decoded, so each escape must match the real password —");
+      console.log("    %23 is #, %40 is @, %25 is %, %2F is /, %2B is +. Cross-check the decoded");
+      console.log("    length printed above against the length MySQL actually stores.");
+    } else if (code === "P1001") {
+      console.log("  → nothing is listening on that host:port — is MySQL running?");
+    } else if (code === "URL") {
+      console.log("  → percent-encode the password (a literal @ is %40, # is %23, / is %2F)");
+    }
+    console.log("  (deploy/status need DATABASE_URL only; SHADOW_DATABASE_URL is for 'migrate dev')");
+    return false;
+  }
+}
+
+async function report() {
+  reportTarget();
+  if (!(await reportConnectivity())) return;
+
+  // An all-columns read mirrors what the app does, so this catches schema drift (a model in
+  // schema.prisma that the database lacks). A missing User column surfaces as a bare 401 on
+  // login; a missing AuditLog is silent, because `audit()` swallows its own errors.
+  console.log("\nSchema check (app's query paths):");
+  let schemaOk = true;
+  const probes: [string, () => Promise<unknown>][] = [
+    ["User", () => prisma.user.findFirst()],
+    ["AuditLog", () => prisma.auditLog.findFirst()],
+  ];
+  for (const [model, probe] of probes) {
+    try {
+      await probe();
+      console.log(`  OK — ${model} present with all columns`);
+    } catch (error) {
+      schemaOk = false;
+      const message = error instanceof Error ? error.message : String(error);
+      console.log(`  ✖ ${model} FAILS (${classify(error)}): ${lastLine(message)}`);
+    }
+  }
+  if (!schemaOk) {
+    console.log("  → a table or column the schema declares is missing; apply migrations:");
+    console.log("      npx prisma migrate deploy   (then: npx prisma migrate status)");
+    return;
   }
 
   console.log("\nEnv files in this directory:");
@@ -148,14 +257,20 @@ async function main() {
         data: { email: normalizedEmail, passwordHash, role: role ?? "ADMIN", name: "Admin" },
       });
 
-  await prisma.auditLog.create({
-    data: {
-      action: existing ? "admin.cli.password_reset" : "admin.cli.password_create",
-      actorId: null,
-      resource: `user/${user.id}`,
-      metadata: { email: normalizedEmail, role: user.role, via: "prisma/reset-password.ts" },
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        action: existing ? "admin.cli.password_reset" : "admin.cli.password_create",
+        actorId: null,
+        resource: `user/${user.id}`,
+        metadata: { email: normalizedEmail, role: user.role, via: "prisma/reset-password.ts" },
+      },
+    });
+  } catch (error) {
+    // The password change already committed; do not report the whole command as failed.
+    console.log(`\n⚠ AuditLog write failed (${classify(error)}) — the password change itself succeeded.`);
+    console.log("  → the AuditLog table is missing: npx prisma migrate deploy");
+  }
 
   console.log(`\n✔ ${existing ? "Password reset" : "Account created"} for ${normalizedEmail} [${user.role}]`);
 
